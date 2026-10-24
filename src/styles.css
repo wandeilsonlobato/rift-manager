@@ -2955,3 +2955,26 @@ tr.total-row td {
   height: 44px;
   border-radius: 8px;
 }
+
+/* Taxa de vitória da SoloQ no draft */
+.champ-wr {
+  position: absolute;
+  top: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 9px;
+  font-weight: 800;
+  background: rgba(0, 0, 0, 0.75);
+  padding: 0 3px;
+  border-radius: 3px;
+}
+
+.soloq-tag {
+  margin-left: 10px;
+  color: var(--gold-2);
+}
+
+.pick-champ-name em {
+  font-style: normal;
+  color: var(--muted);
+}

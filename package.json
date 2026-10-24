@@ -8,7 +8,9 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "import": "node scripts/import-lolesports.mjs",
-    "import:offline": "node scripts/import-lolesports.mjs --offline"
+    "import:offline": "node scripts/import-lolesports.mjs --offline",
+    "import:roles": "node scripts/import-champion-roles.mjs",
+    "import:soloq": "node scripts/import-soloq.mjs"
   },
   "dependencies": {
     "react": "^18.3.1",

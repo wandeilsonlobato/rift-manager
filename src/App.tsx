@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { loadChampions, type Champion } from './game/ddragon';
 import { loadGame, saveGame } from './game/save';
 import type { GameState } from './game/types';
+import { repairChampionPools } from './game/world';
 import { Hub } from './ui/Hub';
 import { NewCareer } from './ui/NewCareer';
 import { Proposals } from './ui/Proposals';
@@ -29,6 +30,11 @@ export default function App() {
   useEffect(() => {
     if (game) saveGame(game);
   }, [game]);
+
+  // Corrige pools de campeões de saves antigos assim que os campeões carregam.
+  useEffect(() => {
+    if (game && champions && !game.poolsFixed) setGame(repairChampionPools(game, champions));
+  }, [game, champions]);
 
   if (error) return <div className="center-screen error">{error}</div>;
   if (!champions || !loaded) return <div className="center-screen">Carregando…</div>;

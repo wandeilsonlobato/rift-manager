@@ -50,7 +50,7 @@ export function NewCareer({ champions, onBack, onCreate }: Props) {
             <input
               value={name}
               maxLength={24}
-              placeholder="Ex.: Tinowns"
+              placeholder="Ex.: Turtle"
               autoFocus
               onChange={(e) => setName(e.target.value)}
             />

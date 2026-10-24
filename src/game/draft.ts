@@ -1,6 +1,7 @@
 import { championsForRole, type Champion } from './ddragon';
 import { coachStyle } from './coach';
 import { championMeta } from './meta';
+import { hasSoloq, presence } from './soloq';
 import { pick, type Rng } from './random';
 import { staffLevel } from './staff';
 import { ROLES, type GameState, type Role } from './types';
@@ -43,6 +44,11 @@ export function unavailable(draft: DraftState, fearless: string[]): Set<string> 
 
 /** IA bane o campeão de conforto do melhor jogador adversário que ainda estiver livre. */
 export function aiBan(state: GameState, enemyTeamId: string, taken: Set<string>, champions: Champion[], rng: Rng): string {
+  // Com dados de SoloQ, às vezes bane o campeão mais presente do meta.
+  if (hasSoloq() && rng() < 0.35) {
+    const meta = champions.filter((c) => !taken.has(c.id)).sort((a, b) => presence(b.id) - presence(a.id));
+    if (meta.length) return pick(rng, meta.slice(0, 3)).id;
+  }
   const enemies = starters(state, enemyTeamId).sort((a, b) => overall(b) - overall(a));
   for (const p of enemies) {
     const options = p.champions.filter((c) => !taken.has(c));
@@ -71,8 +77,9 @@ export function aiPick(
   const open = lineup.filter((p) => !picks[p.role]);
   const comfort = (role: Role) => lineup.find((p) => p.role === role)!.champions.filter((c) => !taken.has(c));
   const target = open.sort((a, b) => comfort(a.role).length - comfort(b.role).length || overall(b) - overall(a))[0];
-  const options = comfort(target.role);
-  if (options.length) return { role: target.role, champion: pick(rng, options) };
+  // Entre os campeões de conforto, prefere os mais fortes do patch.
+  const options = comfort(target.role).sort((a, b) => championMeta(state, b, target.role) - championMeta(state, a, target.role));
+  if (options.length) return { role: target.role, champion: pick(rng, options.slice(0, 2)) };
   const fallback = championsForRole(champions, target.role).filter((c) => !taken.has(c.id));
   return { role: target.role, champion: fallback.length ? pick(rng, fallback).id : anyAvailable(champions, taken, rng) };
 }
@@ -122,7 +129,7 @@ export function draftScore(
     if (!champ) continue;
     const inPool = p.champions.includes(champ);
     const fits = championsForRole(champions, p.role).some((c) => c.id === champ);
-    comfort += (inPool ? 2 : -3) + championMeta(state, champ);
+    comfort += (inPool ? 2 : -3) + championMeta(state, champ, p.role);
     if (!fits) comfort -= 3;
     if (!inPool) notes.push(`${p.nick} fora do pool`);
     if (!fits) notes.push(`${byId.get(champ)?.name ?? champ} fora da rota`);

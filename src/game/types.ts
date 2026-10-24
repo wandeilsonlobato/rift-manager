@@ -378,6 +378,8 @@ export interface GameState {
   /** draft manual nos jogos do coach */
   manualDraft?: boolean;
   tactic?: Tactic;
+  /** pools de campeões já corrigidos para as rotas reais */
+  poolsFixed?: boolean;
   /** estatísticas por jogador e temporada */
   playerStats?: Record<string, Record<number, SeasonStats>>;
   meta?: Patch;

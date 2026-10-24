@@ -420,6 +420,7 @@ export function createCareer(
     titles: [],
     training: { focus: 'teamfight', intensity: 'normal' },
     lastReport: null,
+    poolsFixed: true,
     refused: [],
     review: null,
     career: [],
@@ -449,4 +450,29 @@ export function acceptProposal(state: GameState, proposal: Proposal): GameState 
     proposals: [],
     week: Math.max(state.week, 1),
   };
+}
+
+/**
+ * Saves antigos geravam pools pela classe do campeão (ex.: Leona no top). Troca os campeões que não
+ * jogam na rota do jogador por outros da rota certa. Só roda uma vez por save.
+ */
+export function repairChampionPools(state: GameState, champions: Champion[]): GameState {
+  if (state.poolsFixed) return state;
+  const byId = new Map(champions.map((c) => [c.id, c]));
+  const players: Record<string, Player> = {};
+  for (const p of Object.values(state.players)) {
+    const fits = p.champions.filter((id) => {
+      const c = byId.get(id);
+      return c && championsForRole([c], p.role).length > 0;
+    });
+    if (fits.length === p.champions.length) {
+      players[p.id] = p;
+      continue;
+    }
+    const rng = createRng(`pool-${p.id}`);
+    const options = shuffle(rng, championsForRole(champions, p.role).filter((c) => !fits.includes(c.id)));
+    const wanted = Math.max(3, p.champions.length);
+    players[p.id] = { ...p, champions: [...fits, ...options.slice(0, wanted - fits.length).map((c) => c.id)] };
+  }
+  return { ...state, players, poolsFixed: true };
 }

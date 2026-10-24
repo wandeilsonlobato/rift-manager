@@ -1,6 +1,7 @@
 import type { Champion } from './ddragon';
 import { pick, shuffle, type Rng } from './random';
-import type { GameState, MetaStyle, Player } from './types';
+import { hasSoloq, rankedChampions, soloqBonus } from './soloq';
+import type { GameState, MetaStyle, Player, Role } from './types';
 
 export const STYLE_LABEL: Record<MetaStyle, string> = {
   early: 'Early game',
@@ -22,18 +23,30 @@ export function metaWeights(state: GameState): [number, number, number] {
 /** Novo patch a cada fase da temporada: muda quem está forte e o estilo de jogo. */
 export function newPatch(state: GameState, champions: Champion[], rng: Rng) {
   const count = state.meta?.name.startsWith(`${state.season - 2000}.`) ? Number(state.meta.name.split('.')[1]) + 1 : 1;
-  const shuffled = shuffle(rng, champions.map((c) => c.id));
+  let buffed: string[];
+  let nerfed: string[];
+  if (hasSoloq()) {
+    // Dados reais: fortes e fracos saem do topo e da base da taxa de vitória (com um pouco de variação por fase).
+    const ranked = rankedChampions().filter((id) => champions.some((c) => c.id === id));
+    buffed = shuffle(rng, ranked.slice(0, 22)).slice(0, 14);
+    nerfed = shuffle(rng, ranked.slice(-16)).slice(0, 10);
+  } else {
+    const shuffled = shuffle(rng, champions.map((c) => c.id));
+    buffed = shuffled.slice(0, 14);
+    nerfed = shuffled.slice(14, 24);
+  }
   state.meta = {
     name: `${state.season - 2000}.${count}`,
     phase: state.phase,
     style: pick(rng, ['early', 'balanced', 'late'] as MetaStyle[]),
-    buffed: shuffled.slice(0, 14),
-    nerfed: shuffled.slice(14, 24),
+    buffed,
+    nerfed,
   };
 }
 
-/** Bônus de meta de um campeão escolhido no draft. */
-export function championMeta(state: GameState, champion: string): number {
+/** Bônus de meta de um campeão escolhido no draft (taxa de vitória real na rota, se houver dados). */
+export function championMeta(state: GameState, champion: string, role?: Role): number {
+  if (hasSoloq()) return soloqBonus(champion, role);
   if (state.meta?.buffed.includes(champion)) return 1.5;
   if (state.meta?.nerfed.includes(champion)) return -1.5;
   return 0;

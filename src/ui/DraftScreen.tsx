@@ -13,6 +13,7 @@ import {
 import { createRng } from '../game/random';
 import { TACTICS } from '../game/coach';
 import { ROLE_LABEL, ROLES, type Game, type GameState, type Player, type Role, type Tactic } from '../game/types';
+import { hasSoloq, soloqInfo, winrate } from '../game/soloq';
 import { playDraftedGame } from '../game/week';
 import { overall, starters } from '../game/world';
 import { Img, Rating } from './common';
@@ -291,6 +292,11 @@ export function DraftScreen({ game, seriesId, champions, onGamePlayed, onFinish 
             <div className="legend muted small">
               <span className="dot mine" /> pool do seu time <span className="dot enemy" /> pool do adversário{' '}
               <span className="up">▲</span> forte no patch <span className="down">▼</span> fraco no patch
+              {hasSoloq() && (
+                <span className="soloq-tag">
+                  % = vitórias na SoloQ ({soloqInfo().matches} partidas Challenger {soloqInfo().platform}, patch {soloqInfo().patch})
+                </span>
+              )}
             </div>
             <div className="champ-grid">
               {grid.map((c) => {
@@ -302,13 +308,18 @@ export function DraftScreen({ game, seriesId, champions, onGamePlayed, onFinish 
                     disabled={off || !myTurn}
                     onClick={() => setSelected(c.id)}
                     onDoubleClick={() => selected === c.id && confirm()}
-                    title={c.name}
+                    title={wrLabel(c.id, filter || undefined, c.name)}
                   >
                     <img src={championIcon(c.id)} alt={c.name} loading="lazy" />
                     {myPools.has(c.id) && <span className="dot mine" />}
                     {enemyPools.has(c.id) && <span className="dot enemy" />}
                     {game.meta?.buffed.includes(c.id) && <span className="meta-tag up">▲</span>}
                     {game.meta?.nerfed.includes(c.id) && <span className="meta-tag down">▼</span>}
+                    {hasSoloq() && winrate(c.id, filter || undefined) !== null && (
+                      <span className={`champ-wr ${winrate(c.id, filter || undefined)! >= 0.5 ? 'up' : 'down'}`}>
+                        {pct(winrate(c.id, filter || undefined)!)}
+                      </span>
+                    )}
                     <span className="champ-name">{c.name}</span>
                   </button>
                 );
@@ -322,6 +333,12 @@ export function DraftScreen({ game, seriesId, champions, onGamePlayed, onFinish 
 }
 
 const fmt = (n: number) => `${n >= 0 ? '+' : ''}${n.toFixed(1)}`;
+const pct = (wr: number) => `${(wr * 100).toFixed(1)}%`;
+
+function wrLabel(id: string, role: Role | undefined, name: string): string {
+  const wr = winrate(id, role);
+  return wr === null ? name : `${name} · ${pct(wr)} de vitórias na SoloQ`;
+}
 
 interface CardProps {
   player: Player;
@@ -364,7 +381,12 @@ function PickCard({ player, side, champion, preview, active, enemyTurn, taken, c
         <img className="pick-role" src={roleIcon(player.role)} alt={ROLE_LABEL[player.role]} />
         <span className="pick-name">{player.nick}</span>
       </div>
-      {champion && <span className="pick-champ-name">{champName(champion)}</span>}
+      {champion && (
+        <span className="pick-champ-name">
+          {champName(champion)}
+          {winrate(champion, player.role) !== null && <em> · {pct(winrate(champion, player.role)!)}</em>}
+        </span>
+      )}
     </div>
   );
 }

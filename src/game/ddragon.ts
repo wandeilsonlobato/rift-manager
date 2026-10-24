@@ -1,3 +1,4 @@
+import championRoles from '../data/championRoles.json';
 // Riot Data Dragon: dados e imagens oficiais dos campeões (sem chave de API).
 import type { Role } from './types';
 
@@ -32,6 +33,9 @@ export function championSplash(id: string): string {
   return `${BASE}/cdn/img/champion/splash/${id}_0.jpg`;
 }
 
+// Rotas reais (Meraki Analytics). Campeões novos que ainda não estão lá usam a classe como estimativa.
+const REAL_ROLES = championRoles as Record<string, Role[]>;
+
 // Classes do Data Dragon que combinam com cada rota (aproximação).
 const ROLE_TAGS: Record<Role, string[]> = {
   top: ['Fighter', 'Tank'],
@@ -41,9 +45,13 @@ const ROLE_TAGS: Record<Role, string[]> = {
   support: ['Support'],
 };
 
+export function playsRole(champion: Champion, role: Role): boolean {
+  const real = REAL_ROLES[champion.id];
+  return real ? real.includes(role) : ROLE_TAGS[role].includes(champion.tags[0]);
+}
+
 export function championsForRole(champions: Champion[], role: Role): Champion[] {
-  const tags = ROLE_TAGS[role];
-  return champions.filter((c) => tags.includes(c.tags[0]));
+  return champions.filter((c) => playsRole(c, role));
 }
 
 /** Arte vertical do campeão (a da tela de carregamento), boa para os cards do draft. */
