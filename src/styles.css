@@ -2956,94 +2956,7 @@ tr.total-row td {
   border-radius: 8px;
 }
 
-/* Taxa de vitória da SoloQ no draft */
-.champ-wr {
-  position: absolute;
-  top: 2px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 9px;
-  font-weight: 800;
-  background: rgba(0, 0, 0, 0.75);
-  padding: 0 3px;
-  border-radius: 3px;
-}
 
-.soloq-tag {
-  margin-left: 10px;
-  color: var(--gold-2);
-}
-
-.pick-champ-name em {
-  font-style: normal;
-  color: var(--muted);
-}
-
-/* Confrontos de rota na análise do draft */
-.lane-table {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.lane-table h4 {
-  margin: 0 0 4px;
-  color: var(--gold-2);
-}
-
-.lane-row {
-  display: grid;
-  grid-template-columns: 60px 70px 1fr 70px 80px;
-  align-items: center;
-  gap: 10px;
-}
-
-.lane-name {
-  font-weight: 700;
-  text-align: left;
-}
-
-.lane-champs {
-  display: flex;
-  gap: 3px;
-}
-
-.lane-champs.red {
-  justify-content: flex-end;
-}
-
-.lane-champs img {
-  width: 30px;
-  height: 30px;
-  border-radius: 4px;
-}
-
-.lane-bar {
-  position: relative;
-  height: 20px;
-  background: rgba(232, 64, 87, 0.55);
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-.lane-bar .blue {
-  height: 100%;
-  background: rgba(74, 163, 255, 0.75);
-}
-
-.lane-bar span {
-  position: absolute;
-  inset: 0;
-  font-size: 12px;
-  font-weight: 700;
-  line-height: 20px;
-  text-shadow: 0 0 3px #000;
-}
-
-.lane-games {
-  text-align: right;
-}
 
 /* ===================================================================
    Celular e tablets. Fica no fim do arquivo de propósito: assim nenhuma
@@ -3448,19 +3361,6 @@ body {
     grid-template-columns: 1fr;
   }
 
-  .lane-row {
-    grid-template-columns: 44px 52px 1fr 52px;
-    gap: 6px;
-  }
-
-  .lane-games {
-    display: none;
-  }
-
-  .lane-champs img {
-    width: 24px;
-    height: 24px;
-  }
 
   .draft-summary {
     padding: 14px 10px;

@@ -16,7 +16,6 @@ import { GrowthList } from './TrainingTab';
 import { EventCard } from './EventCard';
 import { Flag, FormBadge } from './common';
 import { STYLE_LABEL } from '../game/meta';
-import { hasSoloq, soloqInfo } from '../game/soloq';
 import { COACH_STYLES, coachStyle, TACTICS } from '../game/coach';
 import { SeriesRow } from './MatchRow';
 
@@ -296,12 +295,6 @@ function PatchPanel({ game }: { game: GameState }) {
       <h3>
         Patch {meta.name} · meta {STYLE_LABEL[meta.style].toLowerCase()}
       </h3>
-      {hasSoloq() && (
-        <p className="muted small">
-          Fortes e fracos pela taxa de vitória real: {soloqInfo().matches} partidas de Challenger {soloqInfo().platform} (patch{' '}
-          {soloqInfo().patch}).
-        </p>
-      )}
       <div className="patch-row">
         <span className="up small">Fortes</span>
         {meta.buffed.map((c) => (
