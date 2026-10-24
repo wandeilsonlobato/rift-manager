@@ -453,7 +453,10 @@ export function startNewSeason(prev: GameState, champions: Champion[]): GameStat
 
   recordSeasonHistory(state);
   retirements(state, rng);
+  // Evolução do elenco do coach na pré-temporada (aparece na caixa de entrada).
+  const before = new Map(state.teams[myTeam].playerIds.map((id) => [id, overall(state.players[id])]));
   for (const p of Object.values(state.players)) develop(p, rng);
+  state.evolution = [...before].map(([playerId, from]) => ({ playerId, from, to: overall(state.players[playerId]) }));
   aiMarket(state, rng);
 
   // Times da IA ajustam o teto à nova folha e recebem verba; o caixa do coach anda semana a semana.

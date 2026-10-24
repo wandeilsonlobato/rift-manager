@@ -49,6 +49,12 @@ const PATHS: Record<string, ReactNode> = {
   star: <path d="M12 4l2.4 5 5.6.8-4 3.9 1 5.5-5-2.7-5 2.7 1-5.5-4-3.9 5.6-.8z" />,
   shield: <path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z" />,
   swords: <path d="M5 4l9 9M4 5l1-1M14 13l-2 2M15 14l3 3M19 4l-9 9M20 5l-1-1M10 13l2 2M9 14l-3 3" />,
+  help: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.6M12 17v.5" />
+    </>
+  ),
 };
 
 export type IconName = keyof typeof PATHS;

@@ -90,3 +90,46 @@ export function ChampionCeremony({ game, comp, onClose }: { game: GameState; com
     </div>
   );
 }
+
+interface Skipped {
+  compName: string;
+  championId: string;
+}
+
+/** Torneio internacional sem o time do coach: mostra só o campeão e segue para o próximo split. */
+export function InternationalSummary({
+  game,
+  items,
+  nextLabel,
+  onClose,
+}: {
+  game: GameState;
+  items: Skipped[];
+  nextLabel: string;
+  onClose: () => void;
+}) {
+  return (
+    <div className="splash-overlay" onClick={onClose}>
+      <div className="result-splash intl-summary" onClick={(e) => e.stopPropagation()}>
+        <span className="hero-sub">Seu time não se classificou</span>
+        {items.map((item) => {
+          const champ = game.teams[item.championId];
+          return (
+            <div key={item.compName} className="intl-champion">
+              <span className="muted">{item.compName}</span>
+              <div className="ceremony-trophy">
+                <Icon name="trophy" size={48} />
+              </div>
+              <Img src={champ.image} alt={champ.code} className="nm-logo" />
+              <strong>{champ.name}</strong>
+              <span className="hero-sub">Campeão</span>
+            </div>
+          );
+        })}
+        <button className="btn primary big" onClick={onClose}>
+          Seguir para {nextLabel} <Icon name="next" />
+        </button>
+      </div>
+    </div>
+  );
+}

@@ -410,6 +410,12 @@ export interface GameState {
   /** draft manual nos jogos do coach */
   manualDraft?: boolean;
   tactic?: Tactic;
+  /** torneios internacionais simulados porque o time do coach não se classificou */
+  skipped?: { phase: PhaseId; compName: string; championId: string }[];
+  /** tutorial da primeira carreira já visto */
+  tutorialDone?: boolean;
+  /** evolução do elenco na virada de temporada (OVR antes e depois) */
+  evolution?: { playerId: string; from: number; to: number }[];
   /** títulos do coach já comemorados (cerimônia mostrada) */
   celebrated?: string[];
   /** pools de campeões já corrigidos para as rotas reais */

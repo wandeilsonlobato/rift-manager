@@ -3,6 +3,7 @@ import { payroll } from '../game/market';
 import { fireStaff, hireStaff, STAFF_INFO, staffPayroll } from '../game/staff';
 import type { GameState, StaffRole } from '../game/types';
 import { money } from './common';
+import { CountUp } from './motion';
 import { InfoTip } from './Icon';
 
 interface Props {
@@ -23,7 +24,9 @@ export function ClubTab({ game, onChange }: Props) {
       <div className="stat-row">
         <div className="panel stat">
           <span className="muted small">Caixa</span>
-          <strong className={team.cash < 0 ? 'down' : ''}>{money(team.cash)}</strong>
+          <strong className={team.cash < 0 ? 'down' : ''}>
+            <CountUp value={team.cash} format={(n) => money(Math.round(n))} />
+          </strong>
           <span className="muted small">{team.cash < 0 ? 'negativo: a diretoria cobra' : 'disponível'}</span>
         </div>
         <div className="panel stat">

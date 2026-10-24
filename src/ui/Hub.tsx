@@ -10,6 +10,7 @@ import { HistoryTab } from './HistoryTab';
 import { Home } from './Home';
 import { PlayerLink, PlayerModal } from './PlayerModal';
 import { ChampionCeremony } from './ResultSplash';
+import { Tutorial } from './Tutorial';
 import { MarketTab } from './MarketTab';
 import { SeriesModal } from './MatchModal';
 import { Roster } from './Roster';
@@ -39,6 +40,8 @@ export function Hub({ game, champions, onChange, onExit }: Props) {
   const [tab, setTab] = useState<Tab>('home');
   const [openSeries, setOpenSeries] = useState<Series | null>(null);
   const [openPlayer, setOpenPlayer] = useState<string | null>(null);
+  const [highlight, setHighlight] = useState<Tab | null>(null);
+  const [tutorial, setTutorial] = useState(!game.tutorialDone);
   // Título conquistado e ainda não comemorado abre a cerimônia.
   const celebration = game.competitions.find(
     (c) => c.done && c.championId === game.coach.teamId && !(game.celebrated ?? []).includes(c.id),
@@ -70,7 +73,7 @@ export function Hub({ game, champions, onChange, onExit }: Props) {
           {TABS.map((t) => (
             <button
               key={t.id}
-              className={`nav-item ${tab === t.id ? 'active' : ''}`}
+              className={`nav-item ${tab === t.id ? 'active' : ''} ${highlight === t.id ? 'tut-highlight' : ''}`}
               disabled={t.soon}
               onClick={() => setTab(t.id)}
             >
@@ -86,12 +89,17 @@ export function Hub({ game, champions, onChange, onExit }: Props) {
             <br />
             {phaseLabel(game.phase)}
           </span>
+          <div className="footer-tools">
+            <button className="btn ghost small" title="Tutorial" onClick={() => setTutorial(true)}>
+              <Icon name="help" />
+            </button>
+          </div>
           <button className="btn ghost small" onClick={onExit}>
             Menu principal
           </button>
         </div>
       </aside>
-      <main className="hub-main">
+      <main className="hub-main" key={tab}>
         {tab === 'home' && (
           <Home game={game} champions={champions} onChange={onChange} onOpenSeries={setOpenSeries} onTab={setTab} />
         )}
@@ -104,6 +112,15 @@ export function Hub({ game, champions, onChange, onExit }: Props) {
       </main>
       {openSeries && <SeriesModal game={game} series={openSeries} onClose={() => setOpenSeries(null)} />}
       {openPlayer && <PlayerModal game={game} playerId={openPlayer} onClose={() => setOpenPlayer(null)} />}
+      {tutorial && (
+        <Tutorial
+          onHighlight={setHighlight}
+          onFinish={() => {
+            setTutorial(false);
+            if (!game.tutorialDone) onChange({ ...game, tutorialDone: true });
+          }}
+        />
+      )}
       {celebration && (
         <ChampionCeremony
           game={game}

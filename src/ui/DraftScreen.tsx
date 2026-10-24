@@ -17,6 +17,7 @@ import { playDraftedGame } from '../game/week';
 import { overall, starters } from '../game/world';
 import { Img, Rating } from './common';
 import { LiveMatch } from './LiveMatch';
+import { PlayerCard } from './PlayerCard';
 import { Icon } from './Icon';
 
 interface Props {
@@ -378,41 +379,57 @@ interface ResultProps {
   onFinish: () => void;
 }
 
+/** Fim da partida: a mesma tela grande de VITÓRIA / DERROTA do resumo da semana, com o MVP. */
 function GameResult({ game, match, seriesId, onNext, onFinish }: ResultProps) {
   const series = game.series[seriesId];
   const myTeam = game.coach.teamId!;
   const won = match.winner === myTeam;
   const d = match.detail;
-  const mvp = d && game.players[d.mvp];
+  const mvp = d ? game.players[d.mvp] : null;
+  const mineBlue = match.blue === myTeam;
+  const rival = game.teams[mineBlue ? match.red : match.blue];
+  const [mine, theirs] = mineBlue ? match.kills : [match.kills[1], match.kills[0]];
+  const [seriesMine, seriesTheirs] = series.a === myTeam ? series.wins : [series.wins[1], series.wins[0]];
+
   return (
-    <div className="draft-summary">
-      <h1 className={`splash-title ${won ? 'victory' : 'defeat'}`}>{won ? 'Vitória' : 'Derrota'}</h1>
-      <p>
-        {game.teams[match.blue].code} {match.kills[0]} × {match.kills[1]} {game.teams[match.red].code}
-        {d && ` · ${Math.floor(d.duration)} min`}
-      </p>
-      {mvp && <p className="muted">MVP: {mvp.nick}</p>}
-      {d && (
-        <ul className="timeline compact">
-          {d.events.map((e, i) => (
-            <li key={i} className={e.side}>
-              {e.text}
-            </li>
-          ))}
-        </ul>
-      )}
-      <p>
-        Série: {game.teams[series.a].code} {series.wins[0]} × {series.wins[1]} {game.teams[series.b].code}
-      </p>
-      {series.winner ? (
-        <button className="btn primary big" onClick={onFinish}>
-          {series.winner === myTeam ? 'Série vencida! Continuar' : 'Continuar'}
-        </button>
-      ) : (
-        <button className="btn primary big" onClick={onNext}>
-          Próximo jogo <Icon name="next" />
-        </button>
-      )}
+    <div className="splash-overlay">
+      <div className={`result-splash ${won ? 'victory' : 'defeat'}`}>
+        <h1 className="splash-title">{won ? 'Vitória' : 'Derrota'}</h1>
+        <div className="splash-series">
+          <div className={`splash-row ${won ? 'win' : 'loss'}`}>
+            <Img src={game.teams[myTeam].image} alt="" className="team-logo" />
+            <strong>
+              {mine} – {theirs}
+            </strong>
+            <Img src={rival.image} alt="" className="team-logo" />
+            <span className="muted small">
+              {rival.name}
+              {d && ` · ${Math.floor(d.duration)} min`}
+            </span>
+          </div>
+        </div>
+        {series.bestOf > 1 && (
+          <span className="hero-sub">
+            Série {seriesMine} – {seriesTheirs}
+            {series.winner ? (series.winner === myTeam ? ' · série vencida' : ' · série perdida') : ''}
+          </span>
+        )}
+        {mvp && (
+          <div className="splash-mvp">
+            <span className="hero-sub">MVP</span>
+            <PlayerCard game={game} player={mvp} compact />
+          </div>
+        )}
+        {series.winner ? (
+          <button className="btn primary big" onClick={onFinish}>
+            Continuar <Icon name="next" />
+          </button>
+        ) : (
+          <button className="btn primary big" onClick={onNext}>
+            Próximo jogo <Icon name="next" />
+          </button>
+        )}
+      </div>
     </div>
   );
 }

@@ -8,6 +8,7 @@
 //   npm run import:soloq -- --regions=kr,br1 --matches=3000
 //
 // O progresso fica em data-raw/soloq-progress.json: dá para parar (Ctrl+C) e rodar de novo que continua.
+// O arquivo do jogo (src/data/soloq.json) só é gravado no fim ou ao interromper.
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
@@ -147,9 +148,15 @@ function addMatch(info, platform) {
   data.matches++;
 }
 
+/** Progresso em data-raw/ (o jogo não lê essa pasta, então salvar não recarrega o jogo aberto). */
 async function save() {
   await fs.mkdir(path.dirname(PROGRESS_FILE), { recursive: true });
   await fs.writeFile(PROGRESS_FILE, JSON.stringify({ data, seen: [...seen] }));
+}
+
+/** Arquivo usado pelo jogo: só no fim (ou ao interromper), para não recarregar o jogo no meio de uma partida. */
+async function exportData() {
+  await save();
   await fs.writeFile(OUT_FILE, JSON.stringify({ generatedAt: new Date().toISOString(), platform: platforms.join(','), ...data }));
 }
 
@@ -181,11 +188,11 @@ async function collect(platform) {
 }
 
 process.on('SIGINT', async () => {
-  await save();
+  await exportData();
   console.log(`\nInterrompido: ${data.matches} partidas salvas. Rode de novo para continuar.`);
   process.exit(0);
 });
 
 await Promise.all(platforms.map((p) => collect(p).catch((err) => console.error(`[${p}] ${err.message}`))));
-await save();
+await exportData();
 console.log(`\n${data.matches} partidas salvas em ${path.relative(ROOT, OUT_FILE)}`);

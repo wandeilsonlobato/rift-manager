@@ -5,6 +5,7 @@ import { collectiveOf } from '../game/collective';
 import { ATTR_LABEL, COLLECTIVE_LABEL, type GameState, type GrowthEntry } from '../game/types';
 import { trainedFocus, trainThisWeek } from '../game/week';
 import { Icon, InfoTip } from './Icon';
+import { GrowthToasts, tierUps, type TierUp } from './motion';
 
 interface Props {
   game: GameState;
@@ -15,6 +16,7 @@ interface Props {
 export function TrainingTab({ game, champions, onChange }: Props) {
   const { focus, intensity } = game.training;
   const [justTrained, setJustTrained] = useState(false);
+  const [toasts, setToasts] = useState<{ growth: GrowthEntry[]; ups: TierUp[] } | null>(null);
   const trained = trainedFocus(game);
   const offseason = game.phase === 'offseason';
   const locked = !!trained || offseason;
@@ -23,12 +25,15 @@ export function TrainingTab({ game, champions, onChange }: Props) {
     onChange({ ...game, training: { ...game.training, ...patch } });
 
   const train = () => {
-    onChange(trainThisWeek(game, champions));
+    const next = trainThisWeek(game, champions);
+    onChange(next);
     setJustTrained(true);
+    setToasts({ growth: next.trainingResult?.growth ?? [], ups: tierUps(game, next, game.coach.teamId!) });
   };
 
   return (
     <>
+      {toasts && <GrowthToasts game={game} growth={toasts.growth} ups={toasts.ups} onDone={() => setToasts(null)} />}
       <h2>
         Treino da semana
         <InfoTip>

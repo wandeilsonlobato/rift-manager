@@ -498,3 +498,21 @@ body {
     padding-left: 12px;
   }
 }
+
+/* Movimento no celular */
+@media (max-width: 600px) {
+  .growth-toasts {
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    align-items: stretch;
+  }
+
+  .gtoast {
+    min-width: 0;
+  }
+
+  .tutorial {
+    padding: 12px;
+  }
+}

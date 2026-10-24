@@ -23,6 +23,7 @@ export function advanceWeek(prev: GameState, champions: Champion[] | null): Game
   if (prev.phase === 'offseason' || prev.pendingEvent) return prev;
   const state = structuredClone(prev);
   playOneWeek(state, champions);
+  skipPhasesWithoutMe(state, champions);
   return state;
 }
 
@@ -36,7 +37,28 @@ export function advanceToNextMatch(prev: GameState, champions: Champion[] | null
     if (mySeriesThisWeek(state).length || state.pendingEvent) break;
     playOneWeek(state, champions);
   }
+  skipPhasesWithoutMe(state, champions);
   return state;
+}
+
+/**
+ * Torneio internacional sem o time do coach: simula a fase inteira de uma vez e registra o campeão,
+ * para o coach seguir direto para o próximo split.
+ */
+function skipPhasesWithoutMe(state: GameState, champions: Champion[] | null) {
+  const myTeam = state.coach.teamId!;
+  for (let guard = 0; guard < 6 && state.phase !== 'offseason'; guard++) {
+    const comps = currentCompetitions(state);
+    const international = comps.length > 0 && comps.every((c) => c.kind === 'international');
+    if (!international || competitionOf(state, myTeam)) return;
+    const phase = state.phase;
+    for (let week = 0; week < 20 && state.phase === phase; week++) playOneWeek(state, champions);
+    for (const c of comps) {
+      if (c.championId) {
+        state.skipped = [...(state.skipped ?? []), { phase, compName: c.name, championId: c.championId }];
+      }
+    }
+  }
 }
 
 function playOneWeek(state: GameState, champions: Champion[] | null) {

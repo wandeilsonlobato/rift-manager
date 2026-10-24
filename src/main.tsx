@@ -4,6 +4,7 @@ import App from './App';
 import './styles.css';
 import './theme.css';
 import './scenes.css';
+import './motion.css';
 // Ajustes de celular por último, para nenhuma regra anterior sobrescrevê-los.
 import './mobile.css';
 

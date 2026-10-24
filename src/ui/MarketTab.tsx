@@ -16,6 +16,7 @@ import { ROLE_LABEL, ROLES, type GameState, type Player, type Role } from '../ga
 import { overall, starters } from '../game/world';
 import { Img, money, Rating } from './common';
 import { PlayerName } from './PlayerModal';
+import { SigningReveal } from './motion';
 
 type View = 'roster' | 'free' | 'others';
 type Sort = 'ovr' | 'pot' | 'age' | 'salary';
@@ -29,6 +30,7 @@ export function MarketTab({ game, onChange }: Props) {
   const [view, setView] = useState<View>('free');
   const [negotiating, setNegotiating] = useState<Player | null>(null);
   const [toast, setToast] = useState('');
+  const [signed, setSigned] = useState<string | null>(null);
   const teamId = game.coach.teamId!;
   const team = game.teams[teamId];
   const open = game.phase === 'offseason';
@@ -100,16 +102,19 @@ export function MarketTab({ game, onChange }: Props) {
         <PlayerSearch game={game} free={view === 'free'} onNegotiate={setNegotiating} />
       )}
 
+      {signed && <SigningReveal game={game} player={game.players[signed]} onClose={() => setSigned(null)} />}
       {negotiating && (
         <Negotiation
           game={game}
           player={negotiating}
           onClose={() => setNegotiating(null)}
           onSend={(salary, years) => {
+            const renewal = negotiating.teamId === teamId;
             const r = makeOffer(game, negotiating.id, salary, years);
             onChange(r.state);
-            notify(r.message);
             setNegotiating(null);
+            if (r.accepted && !renewal) setSigned(negotiating.id);
+            else notify(r.message);
           }}
         />
       )}

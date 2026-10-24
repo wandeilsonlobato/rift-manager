@@ -15,11 +15,12 @@ import { EventCard } from './EventCard';
 import type { Tab } from './Hub';
 import { Icon } from './Icon';
 import { Inbox } from './Inbox';
+import { CountUp } from './motion';
 import { SeriesRow } from './MatchRow';
 import { NextMatchCard } from './NextMatchCard';
 import { Offseason } from './Offseason';
 import { PlayerCard } from './PlayerCard';
-import { ResultSplash } from './ResultSplash';
+import { InternationalSummary, ResultSplash } from './ResultSplash';
 import { GrowthList } from './TrainingTab';
 
 interface Props {
@@ -97,12 +98,16 @@ export function Home({ game, champions, onChange, onOpenSeries, onTab }: Props) 
 
   // Tela de vitória/derrota quando uma semana com jogos do seu time termina.
   const shownWeek = useRef(game.lastReport?.week ?? 0);
+  // Séries jogadas pelo draft já tiveram tela de resultado; não repetem no resumo da semana.
+  const draftedSeries = useRef(new Set<string>());
   const [splash, setSplash] = useState<Series[] | null>(null);
   useEffect(() => {
     const r = game.lastReport;
     if (!r || r.week === shownWeek.current) return;
     shownWeek.current = r.week;
-    const played = r.seriesIds.map((id) => game.series[id]).filter((s) => s?.winner);
+    const played = r.seriesIds
+      .map((id) => game.series[id])
+      .filter((s) => s?.winner && !draftedSeries.current.has(s.id));
     if (played.length) setSplash(played);
   }, [game.lastReport, game.series]);
 
@@ -116,12 +121,25 @@ export function Home({ game, champions, onChange, onOpenSeries, onTab }: Props) 
   return (
     <>
       {splash && <ResultSplash game={game} series={splash} onClose={() => setSplash(null)} />}
+      {!splash && game.skipped?.length ? (
+        <InternationalSummary
+          game={game}
+          items={game.skipped}
+          nextLabel={phaseLabel(game.phase)}
+          onClose={() => onChange({ ...game, skipped: undefined })}
+        />
+      ) : null}
       {draftId && (
         <DraftScreen
+          // Cada série abre um draft novo (sem herdar picks e resultado da série anterior).
+          key={draftId}
           game={game}
           seriesId={draftId}
           champions={champions}
-          onGamePlayed={onChange}
+          onGamePlayed={(state) => {
+            draftedSeries.current.add(draftId);
+            onChange(state);
+          }}
           onFinish={() => {
             setDraftId(null);
             setResume(true);
@@ -186,9 +204,11 @@ export function Home({ game, champions, onChange, onOpenSeries, onTab }: Props) 
         <div className="panel stat">
           <span className="muted small">Folha salarial</span>
           <strong>
-            {money(payroll(game, team.id))} / {money(team.budget)}
+            <CountUp value={payroll(game, team.id)} format={(n) => money(Math.round(n))} /> / {money(team.budget)}
           </strong>
-          <span className="muted small">caixa {money(team.cash)}</span>
+          <span className="muted small">
+            caixa <CountUp value={team.cash} format={(n) => money(Math.round(n))} />
+          </span>
         </div>
       </div>
 

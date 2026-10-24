@@ -48,6 +48,24 @@ function buildMessages(game: GameState): Message[] {
     });
   }
 
+  // Pré-temporada: quem evoluiu e quem caiu no elenco.
+  if (game.week <= 2 && game.evolution?.length) {
+    const changes = game.evolution
+      .filter((e) => game.players[e.playerId] && e.to !== e.from)
+      .sort((a, b) => b.to - b.from - (a.to - a.from));
+    if (changes.length) {
+      const best = changes[0];
+      out.push({
+        id: 'evolution',
+        from: 'Comissão técnica',
+        icon: 'star',
+        subject: `Evolução da pré-temporada: ${game.players[best.playerId].nick} ${best.to > best.from ? '+' : ''}${best.to - best.from} de OVR`,
+        body: changes.map((e) => `${game.players[e.playerId].nick}: ${e.from} → ${e.to}`).join(' · '),
+        tone: best.to > best.from ? 'good' : 'bad',
+      });
+    }
+  }
+
   if (game.week <= 2 && game.coach.objective && game.phase !== 'offseason') {
     out.push({
       id: 'objective',
