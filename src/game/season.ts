@@ -24,15 +24,21 @@ export function phaseLabel(id: PhaseId): string {
 /** Ligas que mandam times para os torneios internacionais. */
 const MAJORS = ['lck', 'lpl', 'lec', 'lcs', 'lcp', 'cblol-brazil'];
 
-// O primeiro split das ligas principais é a "copa" de cada região.
-const CUP_NAMES: Record<string, string> = {
-  'cblol-brazil': 'Copa CBLOL',
-  lck: 'LCK Cup',
-  lpl: 'LPL Split 1',
-  lec: 'LEC Versus',
-  lcs: 'LCS Lock-In',
-  lcp: 'LCP Split 1',
+// Nome oficial de cada etapa da temporada por liga; as demais usam "<Liga> Split N".
+const SPLIT_NAMES: Record<string, [string, string, string]> = {
+  'cblol-brazil': ['Copa CBLOL', 'CBLOL Split 1', 'CBLOL Split 2'],
+  lck: ['LCK Cup', 'LCK Road to MSI', 'LCK Season'],
+  lpl: ['LPL Split 1', 'LPL Split 2', 'LPL Split 3'],
+  lec: ['LEC Versus', 'LEC Spring', 'LEC Summer'],
+  lcs: ['LCS Lock-In', 'LCS Spring', 'LCS Summer'],
+  lcp: ['LCP Split 1', 'LCP Split 2', 'LCP Split 3'],
+  'lec-academy': ['EMEA Masters Winter', 'EMEA Masters Spring', 'EMEA Masters Summer'],
 };
+
+export function splitName(state: GameState, slug: string, split: number): string {
+  return SPLIT_NAMES[slug]?.[split - 1] ?? `${state.leagues[slug].name} Split ${split}`;
+}
+
 
 const INTL_IMAGES: Partial<Record<PhaseId, string>> = {
   firstStand: 'http://static.lolesports.com/leagues/1740042025201_RG_LOL_FIRST_STAND_LOGO_VOLT_ALPHA.png',
@@ -98,7 +104,7 @@ function startStage(state: GameState, comp: Competition, idx: number, entrants: 
 function leagueComp(state: GameState, slug: string, phase: PhaseId): Competition {
   const league = state.leagues[slug];
   const split = SPLIT_NUMBER[phase]!;
-  const name = split === 1 && CUP_NAMES[slug] ? CUP_NAMES[slug] : `${league.name} Split ${split}`;
+  const name = splitName(state, slug, split);
   const playoffTeams = Math.min(6, league.teamIds.length);
   return {
     id: `${state.season}-${phase}-${slug}`,
@@ -203,6 +209,24 @@ function createPhase(state: GameState, phase: PhaseId): Competition[] {
     case 'offseason':
       return [];
   }
+}
+
+/** Atualiza os nomes das competições de um save antigo (e os títulos já registrados). */
+export function renameCompetitions(state: GameState): GameState {
+  const renamed = new Map<string, string>();
+  const competitions = state.competitions.map((c) => {
+    const split = SPLIT_NUMBER[c.phase];
+    if (c.kind !== 'league' || !split || !c.leagueSlug) return c;
+    const name = splitName(state, c.leagueSlug, split);
+    if (name === c.name) return c;
+    renamed.set(c.name, name);
+    return { ...c, name };
+  });
+  if (!renamed.size) return state;
+  const titles = state.titles.map((t) =>
+    t.season === state.season && renamed.has(t.compName) ? { ...t, compName: renamed.get(t.compName)! } : t,
+  );
+  return { ...state, competitions, titles };
 }
 
 /** Abre uma fase da temporada: cria as competições e as primeiras rodadas. */

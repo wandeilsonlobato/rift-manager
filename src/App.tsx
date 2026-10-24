@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { loadChampions, type Champion } from './game/ddragon';
 import { loadGame, saveGame } from './game/save';
 import type { GameState } from './game/types';
+import { renameCompetitions } from './game/season';
 import { repairChampionPools } from './game/world';
 import { Hub } from './ui/Hub';
 import { NewCareer } from './ui/NewCareer';
@@ -35,6 +36,13 @@ export default function App() {
   useEffect(() => {
     if (game && champions && !game.poolsFixed) setGame(repairChampionPools(game, champions));
   }, [game, champions]);
+
+  // Saves antigos: nomes das competições atualizados para os oficiais.
+  useEffect(() => {
+    if (!game) return;
+    const renamed = renameCompetitions(game);
+    if (renamed !== game) setGame(renamed);
+  }, [game]);
 
   if (error) return <div className="center-screen error">{error}</div>;
   if (!champions || !loaded) return <div className="center-screen">Carregando…</div>;

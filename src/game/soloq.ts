@@ -22,8 +22,15 @@ interface SoloqData {
 
 const DATA = soloqData as SoloqData;
 
-/** Mínimo de jogos para confiar na taxa de vitória (amostra pequena engana). */
+/** Mínimo de jogos para considerar o campeão. */
 const MIN_GAMES = 15;
+/**
+ * Suavização: soma 50 jogos "fictícios" com 50% de vitórias. Com poucos jogos a taxa fica perto de 50%;
+ * só uma amostra grande sustenta um número extremo (ex.: 13 vitórias em 18 jogos vira ~57%, não 72%).
+ */
+const PRIOR_GAMES = 50;
+
+const smoothed = (s: RoleStats) => (s.wins + PRIOR_GAMES / 2) / (s.games + PRIOR_GAMES);
 
 export function hasSoloq(): boolean {
   return DATA.matches > 0;
@@ -39,8 +46,8 @@ export function winrate(champion: string, role?: Role): number | null {
   const c = DATA.champions[champion];
   if (!c) return null;
   const r = role ? c.roles[role] : undefined;
-  if (r && r.games >= MIN_GAMES) return r.wins / r.games;
-  if (c.games >= MIN_GAMES) return c.wins / c.games;
+  if (r && r.games >= MIN_GAMES) return smoothed(r);
+  if (c.games >= MIN_GAMES) return smoothed(c);
   return null;
 }
 
@@ -48,7 +55,7 @@ export function winrate(champion: string, role?: Role): number | null {
 export function presence(champion: string): number {
   const c = DATA.champions[champion];
   if (!c || !DATA.matches) return 0;
-  return (c.games + c.bans) / DATA.matches;
+  return Math.min(1, (c.games + c.bans) / DATA.matches);
 }
 
 /** Bônus no draft pela taxa de vitória real: 54% ≈ +1,6; 46% ≈ -1,6 (limite ±2). */
