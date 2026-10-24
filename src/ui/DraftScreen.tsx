@@ -13,7 +13,7 @@ import {
 import { createRng } from '../game/random';
 import { TACTICS } from '../game/coach';
 import { ROLE_LABEL, ROLES, type Game, type GameState, type Player, type Role, type Tactic } from '../game/types';
-import { hasSoloq, soloqInfo, winrate } from '../game/soloq';
+import { hasSoloq, laneEdges, soloqInfo, winrate, type Lane } from '../game/soloq';
 import { playDraftedGame } from '../game/week';
 import { overall, starters } from '../game/world';
 import { Img, Rating } from './common';
@@ -106,6 +106,7 @@ export function DraftScreen({ game, seriesId, champions, onGamePlayed, onFinish 
     setSelected(null);
   };
 
+  const lanes = done ? laneEdges(draft.picks.blue, draft.picks.red) : [];
   const scores = done
     ? {
         blue: draftScore(game, teams.blue, draft.picks.blue, champions),
@@ -254,6 +255,31 @@ export function DraftScreen({ game, seriesId, champions, onGamePlayed, onFinish 
                 </div>
               ))}
             </div>
+            {lanes.length > 0 && (
+              <div className="lane-table">
+                <h4>Confrontos de rota (SoloQ)</h4>
+                {lanes.map((l) => (
+                  <div key={l.lane} className="lane-row">
+                    <span className="lane-name">{LANE_LABEL[l.lane]}</span>
+                    <span className="lane-champs blue">
+                      {l.blue.map((c) => (
+                        <img key={c} src={championIcon(c)} alt={c} title={champName(c)} />
+                      ))}
+                    </span>
+                    <div className="lane-bar" title={`${pct(l.winrate)} para o lado azul`}>
+                      <div className="blue" style={{ width: `${l.winrate * 100}%` }} />
+                      <span>{pct(l.winrate)}</span>
+                    </div>
+                    <span className="lane-champs red">
+                      {l.red.map((c) => (
+                        <img key={c} src={championIcon(c)} alt={c} title={champName(c)} />
+                      ))}
+                    </span>
+                    <span className="muted small lane-games">{l.games ? `${l.games} jogos` : 'estimativa'}</span>
+                  </div>
+                ))}
+              </div>
+            )}
             <label className="inline">
               Tática para a partida
               <select value={game.tactic ?? 'balanced'} onChange={(e) => onGamePlayed({ ...game, tactic: e.target.value as Tactic })}>
@@ -334,6 +360,7 @@ export function DraftScreen({ game, seriesId, champions, onGamePlayed, onFinish 
 
 const fmt = (n: number) => `${n >= 0 ? '+' : ''}${n.toFixed(1)}`;
 const pct = (wr: number) => `${(wr * 100).toFixed(1)}%`;
+const LANE_LABEL: Record<Lane, string> = { top: 'Top', jungle: 'Jungle', mid: 'Mid', bot: 'Bot' };
 
 function wrLabel(id: string, role: Role | undefined, name: string): string {
   const wr = winrate(id, role);

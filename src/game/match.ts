@@ -1,8 +1,9 @@
 import { clamp, gauss, pick, randInt, type Rng } from './random';
-import type { Game, GameState, MatchDetail, MatchEvent, Player, PlayerLine, TrainingFocus } from './types';
+import type { Game, GameState, MatchDetail, MatchEvent, Player, PlayerLine, Role, TrainingFocus } from './types';
 import { coachStyle, tacticMetaBonus, TACTICS } from './coach';
 import { metaWeights, poolMetaBonus } from './meta';
 import { staffLevel } from './staff';
+import { laneBonus, laneEdges } from './soloq';
 import { richTimeline } from './timeline';
 import { starters } from './world';
 
@@ -33,7 +34,14 @@ const FOCUS_BONUS: Record<TrainingFocus, { early: number; mid: number; late: num
  * Força do time em cada fase do jogo. Além dos atributos entram moral, forma dos jogadores,
  * química do elenco, foco do treino e o meta do patch (ou o bônus do draft, quando houve draft).
  */
-function buildSide(state: GameState, teamId: string, focus: TrainingFocus, rng: Rng, draftBonus?: number): Side {
+function buildSide(
+  state: GameState,
+  teamId: string,
+  focus: TrainingFocus,
+  rng: Rng,
+  draftBonus?: number,
+  lanes = { early: 0, mid: 0 },
+): Side {
   const players = starters(state, teamId);
   const bonus = FOCUS_BONUS[focus];
   const morale = (avg(players.map((p) => p.morale)) - 60) / 10;
@@ -46,8 +54,8 @@ function buildSide(state: GameState, teamId: string, focus: TrainingFocus, rng: 
   // Variação de "dia": nem todo jogo sai como no papel.
   const day = gauss(rng) * 3;
   const shared = morale + playerForm + chemistry + meta + day;
-  const early = avg(players.map((p) => p.attrs.laning * 0.5 + p.attrs.mechanics * 0.3 + p.attrs.macro * 0.2)) + bonus.early + tactic.early + shared;
-  const mid = avg(players.map((p) => p.attrs.teamfight * 0.4 + p.attrs.macro * 0.4 + p.attrs.mechanics * 0.2)) + bonus.mid + tactic.mid + shared;
+  const early = avg(players.map((p) => p.attrs.laning * 0.5 + p.attrs.mechanics * 0.3 + p.attrs.macro * 0.2)) + bonus.early + tactic.early + lanes.early + shared;
+  const mid = avg(players.map((p) => p.attrs.teamfight * 0.4 + p.attrs.macro * 0.4 + p.attrs.mechanics * 0.2)) + bonus.mid + tactic.mid + lanes.mid + shared;
   const late = avg(players.map((p) => p.attrs.teamfight * 0.4 + p.attrs.mental * 0.3 + p.attrs.macro * 0.3)) + bonus.late + tactic.late + shared;
   const [we, wm, wl] = metaWeights(state);
   return {
@@ -123,8 +131,23 @@ export function simulateGame(
   rng: Rng,
   options: GameOptions = {},
 ): Game {
-  const blue = buildSide(state, match.blue, focus[match.blue] ?? 'mechanics', rng, options.draft?.bonus[0]);
-  const red = buildSide(state, match.red, focus[match.red] ?? 'mechanics', rng, options.draft?.bonus[1]);
+  // Campeões de cada lado (jogos com detalhes): do draft ou do pool de cada jogador.
+  const players = [starters(state, match.blue), starters(state, match.red)];
+  let champs: [string[], string[]] | null = null;
+  if (options.draft) {
+    const d = options.draft;
+    champs = [players[0].map((p) => d.picks[0][p.id]), players[1].map((p) => d.picks[1][p.id])];
+  } else if (detailed) {
+    const taken = new Set<string>(options.excluded);
+    champs = [pickChampions(players[0], taken, rng), pickChampions(players[1], taken, rng)];
+  }
+  // Confrontos de rota pelos dados reais de SoloQ: quem leva as rotas sai na frente no early.
+  const byRole = (side: 0 | 1) =>
+    Object.fromEntries(players[side].map((p, i) => [p.role, champs![side][i]])) as Partial<Record<Role, string>>;
+  const lanes = champs ? laneEdges(byRole(0), byRole(1)) : [];
+  const lb = laneBonus(lanes);
+  const blue = buildSide(state, match.blue, focus[match.blue] ?? 'mechanics', rng, options.draft?.bonus[0], lb);
+  const red = buildSide(state, match.red, focus[match.red] ?? 'mechanics', rng, options.draft?.bonus[1], { early: -lb.early, mid: -lb.mid });
   // Leve vantagem do lado azul, como no jogo real.
   const blueWinP = logistic((blue.power - red.power + 0.4) / 3.5);
   const blueWins = rng() < blueWinP;
@@ -150,18 +173,17 @@ export function simulateGame(
 
   // KDA: abates distribuídos por rota, assistências para os companheiros.
   const lines = new Map<Side, PlayerLine[]>();
-  const taken = new Set<string>(options.excluded);
   for (const s of [blue, red]) {
-    const drafted = options.draft?.picks[s === blue ? 0 : 1];
-    const champs = drafted ? s.players.map((p) => drafted[p.id]) : pickChampions(s.players, taken, rng);
-    lines.set(s, s.players.map((p, i) => ({ playerId: p.id, champion: champs[i], kills: 0, deaths: 0, assists: 0 })));
+    const list = champs![s === blue ? 0 : 1];
+    lines.set(s, s.players.map((p, i) => ({ playerId: p.id, champion: list[i], kills: 0, deaths: 0, assists: 0 })));
   }
   // MVP: abates pesam mais que assistências; morrer custa caro.
   const kdaScore = (p: PlayerLine) => p.kills * 3 + p.assists * 1.5 - p.deaths * 2;
 
   if (options.rich) {
     const view = (s: Side) => ({ teamId: s.teamId, name: s.name, early: s.early, mid: s.mid, late: s.late, lines: lines.get(s)! });
-    const { detail, kills } = richTimeline(state, [view(blue), view(red)], blueWins, duration, rng);
+    const { detail, kills } = richTimeline(state, [view(blue), view(red)], blueWins, duration, rng, lanes);
+    detail.lanes = lanes;
     const mvp = [...lines.get(w)!].sort((a, b) => kdaScore(b) - kdaScore(a))[0];
     game.kills = kills;
     game.detail = { ...detail, mvp: mvp.playerId };

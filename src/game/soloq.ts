@@ -18,6 +18,10 @@ interface SoloqData {
   matches: number;
   patches: Record<string, number>;
   champions: Record<string, ChampionStats>;
+  /** confrontos por rota: "A|B" (ordem alfabética), vitórias contadas para A */
+  matchups?: Partial<Record<Role, Record<string, RoleStats>>>;
+  /** duplas do bot: "ADC|Suporte" */
+  duos?: Record<string, RoleStats>;
 }
 
 const DATA = soloqData as SoloqData;
@@ -70,4 +74,83 @@ export function rankedChampions(): string[] {
   return Object.keys(DATA.champions)
     .filter((id) => winrate(id) !== null)
     .sort((a, b) => winrate(b)! - winrate(a)!);
+}
+
+/** Peso da estimativa nos confrontos: com menos de ~30 jogos, vale mais a força de cada campeão. */
+const MATCHUP_PRIOR = 30;
+
+/** Chance esperada de A vencer B só pela força de cada um na rota (fórmula log5). */
+function expected(a: string, b: string, role: Role): number {
+  const pa = winrate(a, role) ?? 0.5;
+  const pb = winrate(b, role) ?? 0.5;
+  return (pa * (1 - pb)) / (pa * (1 - pb) + pb * (1 - pa));
+}
+
+export interface Matchup {
+  /** chance do primeiro campeão vencer */
+  winrate: number;
+  /** jogos reais desse confronto na amostra */
+  games: number;
+}
+
+/** Confronto de rota: dado real puxado para a estimativa quando há poucos jogos. */
+export function matchup(role: Role, a: string, b: string): Matchup {
+  const base = expected(a, b, role);
+  const key = a < b ? `${a}|${b}` : `${b}|${a}`;
+  const s = DATA.matchups?.[role]?.[key];
+  if (!s) return { winrate: base, games: 0 };
+  const winsA = a < b ? s.wins : s.games - s.wins;
+  return { winrate: (winsA + base * MATCHUP_PRIOR) / (s.games + MATCHUP_PRIOR), games: s.games };
+}
+
+/** Sinergia da dupla do bot: quanto ela vence acima do esperado pela força de cada um. */
+export function duoSynergy(adc: string, support: string): Matchup {
+  const base = ((winrate(adc, 'bottom') ?? 0.5) + (winrate(support, 'support') ?? 0.5)) / 2;
+  const s = DATA.duos?.[`${adc}|${support}`];
+  if (!s) return { winrate: 0, games: 0 };
+  return { winrate: (s.wins + base * MATCHUP_PRIOR) / (s.games + MATCHUP_PRIOR) - base, games: s.games };
+}
+
+export type Lane = 'top' | 'jungle' | 'mid' | 'bot';
+
+export interface LaneEdge {
+  lane: Lane;
+  blue: string[];
+  red: string[];
+  /** chance do lado azul levar a rota */
+  winrate: number;
+  games: number;
+}
+
+/** Confrontos de cada rota entre os dois drafts (bot = ADC + suporte contra ADC + suporte). */
+export function laneEdges(blue: Partial<Record<Role, string>>, red: Partial<Record<Role, string>>): LaneEdge[] {
+  if (!hasSoloq()) return [];
+  const out: LaneEdge[] = [];
+  for (const role of ['top', 'jungle', 'mid'] as const) {
+    const a = blue[role];
+    const b = red[role];
+    if (!a || !b) continue;
+    const m = matchup(role, a, b);
+    out.push({ lane: role, blue: [a], red: [b], winrate: m.winrate, games: m.games });
+  }
+  const [ba, bs, ra, rs] = [blue.bottom, blue.support, red.bottom, red.support];
+  if (ba && bs && ra && rs) {
+    const adc = matchup('bottom', ba, ra);
+    const sup = matchup('support', bs, rs);
+    const synergy = duoSynergy(ba, bs).winrate - duoSynergy(ra, rs).winrate;
+    out.push({
+      lane: 'bot',
+      blue: [ba, bs],
+      red: [ra, rs],
+      winrate: Math.max(0.05, Math.min(0.95, (adc.winrate + sup.winrate) / 2 + synergy)),
+      games: Math.min(adc.games, sup.games),
+    });
+  }
+  return out;
+}
+
+/** Vantagem das rotas na partida (lado azul; o vermelho recebe o oposto). Pesa mais no early. */
+export function laneBonus(edges: LaneEdge[]): { early: number; mid: number } {
+  const total = edges.reduce((sum, e) => sum + (e.winrate - 0.5), 0);
+  return { early: Math.max(-3, Math.min(3, total * 14)), mid: Math.max(-1.5, Math.min(1.5, total * 6)) };
 }

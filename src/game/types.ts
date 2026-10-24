@@ -219,6 +219,8 @@ export interface MatchDetail {
   mvp: string;
   /** linha do tempo lance a lance (jogos do time do coach) */
   rich?: boolean;
+  /** confrontos de rota pelos dados de SoloQ (chance do lado azul em cada rota) */
+  lanes?: { lane: string; blue: string[]; red: string[]; winrate: number; games: number }[];
 }
 
 export interface Game {

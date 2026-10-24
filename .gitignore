@@ -2,3 +2,4 @@ node_modules
 dist
 *.tsbuildinfo
 .env.local
+data-raw/soloq-progress.json

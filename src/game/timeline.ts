@@ -1,6 +1,7 @@
 // Partida lance a lance: gera a linha do tempo completa dos jogos do time do coach,
 // com placar acumulado em cada momento para a transmissão ao vivo.
 import { clamp, pick, randInt, type Rng } from './random';
+import type { Lane, LaneEdge } from './soloq';
 import type { GameState, MatchDetail, MatchEvent, MatchEventType, MatchSnapshot, PlayerLine } from './types';
 
 export interface TeamView {
@@ -42,8 +43,14 @@ export function richTimeline(
   blueWins: boolean,
   duration: number,
   rng: Rng,
+  lanes: LaneEdge[] = [],
 ): { detail: Omit<MatchDetail, 'mvp'>; kills: [number, number] } {
   const events: MatchEvent[] = [];
+  // Vantagem do azul em cada rota pelos confrontos da SoloQ (0 = equilibrado).
+  const edge = (lane: Lane) => (lanes.find((l) => l.lane === lane)?.winrate ?? 0.5) - 0.5;
+  /** Lado que leva um lance da rota: momento do jogo + vantagem do confronto. */
+  const laneSide = (t: number, lane: Lane) => (rng() < clamp(pBlue(t) + edge(lane) * 3, 0.08, 0.92) ? 0 : 1);
+  const weightedLane = (weights: number[]) => [TOP, MID, ADC][weightedIndex(rng, weights)];
   // Totais finais e o que mudou desde o último lance (o placar de cada lance é refeito no fim, em ordem).
   const snap: MatchSnapshot = { kills: [0, 0], gold: [0, 0], towers: [0, 0], dragons: [0, 0], barons: [0, 0] };
   const bonus = [0, 0];
@@ -124,7 +131,7 @@ export function richTimeline(
 
   // --- Início: invasão nível 1 e disputa do caranguejo
   if (rng() < 0.35) {
-    const s = sideAt(0);
+    const s = laneSide(0, 'jungle');
     if (rng() < 0.35) {
       const k = kill(s, undefined, undefined, 0.7);
       push(1.4, s, 'invade', `Invasão nível 1 do ${sideName(s)}! ${who(teams[s].lines.find((l) => l.playerId === k[0])!)} pega o abate de entrada`, [k]);
@@ -134,7 +141,7 @@ export function richTimeline(
     }
   }
   {
-    const s = sideAt(3);
+    const s = laneSide(3, 'jungle');
     const jg = teams[s].lines[JUNGLE];
     if (rng() < 0.3) {
       const k = kill(s, rng() < 0.6 ? JUNGLE : MID, JUNGLE);
@@ -152,8 +159,9 @@ export function richTimeline(
   const scheduled: { time: number; run: () => void }[] = laneTimes.map((t) => ({
     time: t,
     run: () => {
-      const s = sideAt(t);
-      const lane = pick(rng, [TOP, MID, ADC]);
+      // Rotas com confronto desequilibrado rendem mais abates.
+      const lane = weightedLane([TOP, MID, ADC].map((i) => 1 + Math.abs(edge(laneOf(i))) * 25));
+      const s = laneSide(t, laneOf(lane));
       const first = snap.kills[0] + snap.kills[1] === 0 ? 'First Blood! ' : '';
       if (rng() < 0.55) {
         const k = kill(s, JUNGLE, lane);
@@ -318,6 +326,10 @@ interface Delta {
   dragons: [number, number];
   barons: [number, number];
   gold: [number, number];
+}
+
+function laneOf(idx: number): Lane {
+  return idx === TOP ? 'top' : idx === MID ? 'mid' : idx === JUNGLE ? 'jungle' : 'bot';
 }
 
 function laneName(idx: number): string {
