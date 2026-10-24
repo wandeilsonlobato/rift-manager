@@ -284,7 +284,8 @@ export interface Series {
 export type PhaseId = 'split1' | 'firstStand' | 'split2' | 'msi' | 'ewc' | 'split3' | 'worlds' | 'offseason';
 
 /** rr1/rr2 = pontos corridos turno único/turno e returno */
-export type StageKind = 'rr1' | 'rr2' | 'playoffs' | 'knockout' | 'playin' | 'swiss';
+/** double = eliminação dupla (chave superior, chave inferior e grande final) */
+export type StageKind = 'rr1' | 'rr2' | 'playoffs' | 'knockout' | 'playin' | 'swiss' | 'double';
 
 export interface Stage {
   kind: StageKind;

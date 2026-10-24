@@ -52,11 +52,18 @@ export function Home({ game, champions, onChange, onOpenSeries, onTab }: Props) 
       const pos = table.findIndex((r) => r.teamId === team.id);
       status = pos >= 0 ? `${pos + 1}º · ${table[pos].wins}V ${table[pos].losses}D` : 'Eliminado';
     } else {
-      const alive = st.teamIds.includes(team.id) && !st.rounds.flat().some((id) => {
+      // Na eliminação dupla a primeira derrota manda para a chave inferior; a segunda elimina.
+      const losses = st.rounds.flat().filter((id) => {
         const s = game.series[id];
         return s.winner && (s.a === team.id || s.b === team.id) && s.winner !== team.id;
-      });
-      status = alive ? `${st.name} · vivo na disputa` : 'Eliminado';
+      }).length;
+      const lives = st.kind === 'double' ? 2 : 1;
+      const alive = st.teamIds.includes(team.id) && losses < lives;
+      status = !alive
+        ? 'Eliminado'
+        : st.kind === 'double' && losses === 1
+          ? `${st.name} · chave inferior`
+          : `${st.name} · vivo na disputa`;
     }
   }
 

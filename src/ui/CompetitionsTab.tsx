@@ -165,7 +165,7 @@ function Rounds({ game, stage, onOpenSeries }: { game: GameState; stage: Stage; 
       <div className={isLeague ? '' : 'bracket'}>
         {shown.map((round, i) => (
           <div key={i} className="round">
-            {!isLeague && <span className="muted small">{round[0]?.label}</span>}
+            {!isLeague && <span className="muted small">{[...new Set(round.map((s) => s.label))].join(' · ')}</span>}
             {round
               .filter((s) => open || !isLeague || s.a === myTeam || s.b === myTeam)
               .map((s) => (

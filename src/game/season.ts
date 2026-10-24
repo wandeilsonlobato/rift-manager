@@ -116,7 +116,8 @@ function leagueComp(state: GameState, slug: string, phase: PhaseId): Competition
     // Copa: turno único; splits 2 e 3: turno e returno. Playoffs em MD5.
     stages: [
       stage(split === 1 ? 'rr1' : 'rr2', 'Fase regular', 1, league.teamIds),
-      stage('playoffs', 'Playoffs', 5, [], playoffTeams),
+      // Playoffs em eliminação dupla (com menos de 6 times, mata-mata simples).
+      stage(playoffTeams === 6 ? 'double' : 'playoffs', 'Playoffs', 5, [], playoffTeams),
     ],
     stageIndex: 0,
     done: false,
@@ -172,18 +173,26 @@ function createPhase(state: GameState, phase: PhaseId): Competition[] {
       return [intlComp(state, phase, 'First Stand', [stage('knockout', 'Mata-mata', 5, teams)])];
     }
     case 'msi': {
-      const direct = qualify(state, 'split2', [['lck', 1], ['lpl', 1], ['lec', 1], ['lck', 2], ['lpl', 2], ['lcs', 1]]);
-      const playin = qualify(state, 'split2', [['lcp', 1], ['cblol-brazil', 1], ['lec', 2], ['lcs', 2]]).filter(
+      // MSI 2026: o campeão de cada região vai direto, mais o 2º da região que venceu o First Stand.
+      // Os outros 2ºs colocados (o CBLOL só tem uma vaga) jogam o Play-in, e só um avança.
+      const fsChampion = state.competitions.find((c) => c.id === `${state.season}-firstStand`)?.championId;
+      const seconds = ['lck', 'lpl', 'lec', 'lcs', 'lcp'];
+      const fsRegion = fsChampion ? state.teams[fsChampion].leagueSlug : 'lpl';
+      const extra = seconds.includes(fsRegion) ? fsRegion : 'lpl';
+      const direct = qualify(state, 'split2', [
+        ['lck', 1], ['lpl', 1], ['lec', 1], ['lcs', 1], ['lcp', 1], ['cblol-brazil', 1], [extra, 2],
+      ]);
+      const playin = qualify(state, 'split2', seconds.filter((r) => r !== extra).map((r) => [r, 2] as [string, number])).filter(
         (t) => !direct.includes(t),
       );
       if (playin.length < 4) {
         const teams = [...direct, ...playin].slice(0, 8);
-        return [intlComp(state, phase, 'Mid-Season Invitational', [stage('knockout', 'Mata-mata', 5, teams)])];
+        return [intlComp(state, phase, 'Mid-Season Invitational', [stage('double', 'Fase de chaves', 5, teams)])];
       }
       return [
         intlComp(state, phase, 'Mid-Season Invitational', [
-          stage('playin', 'Play-in', 5, playin),
-          stage('knockout', 'Mata-mata', 5, direct, 2),
+          stage('double', 'Play-in', 5, playin),
+          stage('double', 'Fase de chaves', 5, direct, 1),
         ]),
       ];
     }
@@ -331,6 +340,9 @@ function nextRound(state: GameState, comp: Competition, idx: number): string[] |
       return out;
     }
 
+    case 'double':
+      return doubleElimRound(state, st, make);
+
     // Fase suíça: times com a mesma campanha se enfrentam; 3 vitórias classifica, 3 derrotas elimina.
     case 'swiss': {
       const table = stageStandings(state, st);
@@ -358,6 +370,97 @@ function nextRound(state: GameState, comp: Competition, idx: number): string[] |
   }
 }
 
+type MakeSeries = (label: string, a: string, b: string, bestOf?: number) => string;
+
+/**
+ * Eliminação dupla para 4, 6 ou 8 times: quem perde na chave superior cai para a inferior;
+ * quem perde na inferior está fora. A grande final reúne os vencedores das duas chaves.
+ */
+function doubleElimRound(state: GameState, st: Stage, make: MakeSeries): string[] | null {
+  const t = st.teamIds;
+  const r = st.rounds.length;
+  const R = st.rounds.map((ids) => seriesOf(state, ids));
+  const W = (s: Series) => s.winner!;
+  const L = (s: Series) => loser(s);
+  const seed = (id: string) => t.indexOf(id);
+
+  if (t.length === 4) {
+    switch (r) {
+      case 0:
+        return [make('Chave superior', t[0], t[3]), make('Chave superior', t[1], t[2])];
+      case 1:
+        return [make('Final superior', W(R[0][0]), W(R[0][1])), make('Chave inferior', L(R[0][0]), L(R[0][1]))];
+      case 2:
+        return [make('Final inferior', L(R[1][0]), W(R[1][1]))];
+      case 3:
+        return [make('Grande final', W(R[1][0]), W(R[2][0]))];
+      default:
+        return null;
+    }
+  }
+
+  if (t.length === 6) {
+    switch (r) {
+      // 3º x 6º e 4º x 5º; 1º e 2º esperam nas semifinais superiores.
+      case 0:
+        return [make('Quartas superiores', t[2], t[5]), make('Quartas superiores', t[3], t[4])];
+      case 1: {
+        const [w1, w2] = R[0].map(W);
+        const [low, other] = seed(w1) > seed(w2) ? [w1, w2] : [w2, w1];
+        return [make('Semifinal superior', t[0], low), make('Semifinal superior', t[1], other)];
+      }
+      case 2: {
+        // Cruzamento na chave inferior para evitar revanche imediata.
+        const from = (team: string) => R[0].findIndex((s) => s.winner === team);
+        const rivalA = R[1][0].a === t[0] ? R[1][0].b : R[1][0].a;
+        const rivalB = R[1][1].a === t[1] ? R[1][1].b : R[1][1].a;
+        return [
+          make('Final superior', W(R[1][0]), W(R[1][1])),
+          make('Chave inferior', L(R[1][0]), L(R[0][from(rivalB)])),
+          make('Chave inferior', L(R[1][1]), L(R[0][from(rivalA)])),
+        ];
+      }
+      case 3:
+        return [make('Chave inferior', W(R[2][1]), W(R[2][2]))];
+      case 4:
+        return [make('Final inferior', L(R[2][0]), W(R[3][0]))];
+      case 5:
+        return [make('Grande final', W(R[2][0]), W(R[4][0]))];
+      default:
+        return null;
+    }
+  }
+
+  if (t.length >= 8) {
+    switch (r) {
+      case 0:
+        return [[0, 7], [3, 4], [1, 6], [2, 5]].map(([i, j]) => make('Chave superior', t[i], t[j]));
+      case 1:
+        return [
+          make('Semifinal superior', W(R[0][0]), W(R[0][1])),
+          make('Semifinal superior', W(R[0][2]), W(R[0][3])),
+          make('Chave inferior', L(R[0][0]), L(R[0][1])),
+          make('Chave inferior', L(R[0][2]), L(R[0][3])),
+        ];
+      case 2:
+        return [
+          make('Final superior', W(R[1][0]), W(R[1][1])),
+          make('Chave inferior', L(R[1][0]), W(R[1][3])),
+          make('Chave inferior', L(R[1][1]), W(R[1][2])),
+        ];
+      case 3:
+        return [make('Chave inferior', W(R[2][1]), W(R[2][2]))];
+      case 4:
+        return [make('Final inferior', L(R[2][0]), W(R[3][0]))];
+      case 5:
+        return [make('Grande final', W(R[2][0]), W(R[4][0]))];
+      default:
+        return null;
+    }
+  }
+  return null;
+}
+
 function stageResult(state: GameState, st: Stage): string[] {
   const seed = (id: string) => st.teamIds.indexOf(id);
   const bySeed = (ids: string[]) => [...ids].sort((a, b) => seed(a) - seed(b));
@@ -369,6 +472,25 @@ function stageResult(state: GameState, st: Stage): string[] {
     case 'playin': {
       const series = seriesOf(state, st.rounds[0]);
       return [...bySeed(series.map((s) => s.winner!)), ...bySeed(series.map(loser))];
+    }
+    case 'double': {
+      // Campeão primeiro; os outros pela rodada em que foram eliminados (mais tarde = melhor).
+      const rounds = st.rounds.map((ids) => seriesOf(state, ids));
+      const champion = rounds[rounds.length - 1][0].winner!;
+      const losses = new Map<string, number>();
+      const eliminated = new Map<string, number>();
+      rounds.forEach((series, r) =>
+        series.forEach((s) => {
+          const l = loser(s);
+          const n = (losses.get(l) ?? 0) + 1;
+          losses.set(l, n);
+          if (n >= 2 || r === rounds.length - 1) eliminated.set(l, r);
+        }),
+      );
+      const others = st.teamIds
+        .filter((id) => id !== champion)
+        .sort((a, b) => (eliminated.get(b) ?? -1) - (eliminated.get(a) ?? -1) || seed(a) - seed(b));
+      return [champion, ...others];
     }
     case 'playoffs':
     case 'knockout': {
