@@ -85,6 +85,7 @@ export interface Team {
   chemistry?: number;
   /** titulares escolhidos pelo coach por rota (sem isso, joga o maior OVR) */
   lineup?: Partial<Record<Role, string>>;
+  collective?: Collective;
 }
 
 export interface League {
@@ -154,7 +155,35 @@ export interface CareerEntry {
   titles: string[];
 }
 
-export type TrainingFocus = 'early' | 'teamfight' | 'objectives' | 'mechanics' | 'draft' | 'rest';
+export type TrainingFocus =
+  | 'early'
+  | 'teamfight'
+  | 'objectives'
+  | 'mechanics'
+  | 'draft'
+  | 'rest'
+  | 'team_rotations'
+  | 'team_fights'
+  | 'team_vision'
+  | 'team_comms'
+  | 'team_prep';
+
+/** Atributos coletivos do time (0-100): como os cinco jogam juntos. */
+export interface Collective {
+  rotations: number;
+  teamfight: number;
+  vision: number;
+  comms: number;
+  prep: number;
+}
+
+export const COLLECTIVE_LABEL: Record<keyof Collective, string> = {
+  rotations: 'Rotações',
+  teamfight: 'Coordenação de teamfight',
+  vision: 'Controle de visão',
+  comms: 'Comunicação',
+  prep: 'Preparação de draft',
+};
 export type Intensity = 'light' | 'normal' | 'intense';
 
 export interface Training {
@@ -337,8 +366,9 @@ export interface Title {
 }
 
 export interface GrowthEntry {
+  /** vazio quando o ganho é do time (atributo coletivo) */
   playerId: string;
-  attr: keyof Attributes | 'champion';
+  attr: keyof Attributes | 'champion' | 'collective';
   /** campeão aprendido (attr = 'champion') ou pontos ganhos no atributo */
   value?: string;
 }

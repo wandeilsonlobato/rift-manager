@@ -1,6 +1,7 @@
 import { clamp, gauss, pick, randInt, type Rng } from './random';
 import type { Game, GameState, MatchDetail, MatchEvent, Player, PlayerLine, Role, TrainingFocus } from './types';
 import { coachStyle, tacticMetaBonus, TACTICS } from './coach';
+import { collectiveOf } from './collective';
 import { metaWeights, poolMetaBonus } from './meta';
 import { staffLevel } from './staff';
 import { laneBonus, laneEdges } from './soloq';
@@ -28,6 +29,11 @@ const FOCUS_BONUS: Record<TrainingFocus, { early: number; mid: number; late: num
   mechanics: { early: 1, mid: 1, late: 1 },
   draft: { early: 1.5, mid: 1.5, late: 1.5 },
   rest: { early: 0, mid: 0, late: 0 },
+  team_rotations: { early: 0, mid: 2, late: 1 },
+  team_fights: { early: 0, mid: 1.5, late: 2 },
+  team_vision: { early: 0.5, mid: 1.5, late: 1 },
+  team_comms: { early: 1, mid: 1, late: 1 },
+  team_prep: { early: 1.5, mid: 1, late: 1 },
 };
 
 /**
@@ -50,13 +56,21 @@ function buildSide(
   const mine = teamId === state.coach.teamId;
   const analyst = mine ? staffLevel(state, 'analyst') * 0.3 : 0;
   const tactic = mine ? tacticBonus(state, players) : { early: 0, mid: 0, late: 0 };
-  const meta = draftBonus ?? poolMetaBonus(state, players) + analyst;
-  // Variação de "dia": nem todo jogo sai como no papel.
-  const day = gauss(rng) * 3;
-  const shared = morale + playerForm + chemistry + meta + day;
-  const early = avg(players.map((p) => p.attrs.laning * 0.5 + p.attrs.mechanics * 0.3 + p.attrs.macro * 0.2)) + bonus.early + tactic.early + lanes.early + shared;
-  const mid = avg(players.map((p) => p.attrs.teamfight * 0.4 + p.attrs.macro * 0.4 + p.attrs.mechanics * 0.2)) + bonus.mid + tactic.mid + lanes.mid + shared;
-  const late = avg(players.map((p) => p.attrs.teamfight * 0.4 + p.attrs.mental * 0.3 + p.attrs.macro * 0.3)) + bonus.late + tactic.late + shared;
+  // Coletivo: rotações e visão pesam no mid, coordenação nas lutas, preparação no draft.
+  const c = collectiveOf(state, teamId);
+  const prep = (c.prep - 60) / (draftBonus === undefined ? 40 : 30);
+  const meta = (draftBonus ?? poolMetaBonus(state, players) + analyst) + prep;
+  // Variação de "dia": nem todo jogo sai como no papel. Boa comunicação segura os dias ruins.
+  const day = gauss(rng) * 3 * clamp(1 - (c.comms - 50) / 150, 0.6, 1.2);
+  const shared = morale * clamp(1 - (c.comms - 50) / 200, 0.7, 1.1) + playerForm + chemistry + meta + day;
+  const team = {
+    early: (c.vision - 60) / 40,
+    mid: (c.rotations - 60) / 20 + (c.teamfight - 60) / 25 + (c.vision - 60) / 30,
+    late: (c.teamfight - 60) / 20 + (c.vision - 60) / 25,
+  };
+  const early = avg(players.map((p) => p.attrs.laning * 0.5 + p.attrs.mechanics * 0.3 + p.attrs.macro * 0.2)) + bonus.early + tactic.early + lanes.early + team.early + shared;
+  const mid = avg(players.map((p) => p.attrs.teamfight * 0.4 + p.attrs.macro * 0.4 + p.attrs.mechanics * 0.2)) + bonus.mid + tactic.mid + lanes.mid + team.mid + shared;
+  const late = avg(players.map((p) => p.attrs.teamfight * 0.4 + p.attrs.mental * 0.3 + p.attrs.macro * 0.3)) + bonus.late + tactic.late + team.late + shared;
   const [we, wm, wl] = metaWeights(state);
   return {
     teamId,

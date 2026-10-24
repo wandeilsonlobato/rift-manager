@@ -8,7 +8,8 @@ import { generateStaffMarket, staffLevel } from './staff';
 import { draftScore, picksByPlayer, type DraftState } from './draft';
 import { competitionOf, currentCompetitions, playSeriesGame, playWeek, seriesThisWeek } from './season';
 import { beginOffseason } from './market';
-import { aiFocus, applyTraining } from './training';
+import { decayCollective } from './collective';
+import { aiFocus, applyTraining, focusInfo } from './training';
 import type { Game, GameState, GrowthEntry, Series, TrainingFocus } from './types';
 
 /** Ligas cujas partidas guardam detalhes: a do coach e a outra divisão da mesma região. */
@@ -54,6 +55,7 @@ function playOneWeek(state: GameState, champions: Champion[] | null) {
       focus[team.id] = aiFocus(rng);
       applyTraining(state, team.id, focus[team.id], 'normal', null, rng);
     }
+    decayCollective(state, team.id, focusInfo(focus[team.id]).collective);
   }
   const growth: GrowthEntry[] = trained ? state.trainingResult!.growth : [];
 
@@ -112,7 +114,9 @@ export function trainThisWeek(prev: GameState, champions: Champion[]): GameState
   const state = structuredClone(prev);
   const rng = createRng(`train-${state.season}-${state.week}-${Date.now()}`);
   const { focus, intensity } = state.training;
-  const boost = 1 + staffLevel(state, 'assistant') * 0.12;
+  // Coach tático evolui mais rápido os treinos coletivos.
+  const tacticalBoost = focusInfo(focus).collective && coachStyle(state) === 'tactical' ? 1.2 : 1;
+  const boost = (1 + staffLevel(state, 'assistant') * 0.12) * tacticalBoost;
   const youth = coachStyle(state) === 'developer' ? 1.25 : 1;
   const growth = applyTraining(state, state.coach.teamId!, focus, intensity, champions, rng, boost, youth);
   state.trainedWeek = state.week;

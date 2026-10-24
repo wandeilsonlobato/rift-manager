@@ -1,4 +1,5 @@
 import { clamp, createRng, gauss, pick, randInt, shuffle, type Rng } from './random';
+import { newcomerPenalty } from './collective';
 import type { Champion } from './ddragon';
 import { newPatch } from './meta';
 import { enterPhase } from './season';
@@ -122,6 +123,7 @@ export function makeOffer(prev: GameState, playerId: string, salary: number, yea
     moveToTeam(state, p, teamId);
     // Jogador novo ainda precisa se entrosar.
     state.teams[teamId].chemistry = clamp((state.teams[teamId].chemistry ?? 60) - 6, 0, 100);
+    newcomerPenalty(state, teamId);
   }
   p.salary = salary;
   p.contractEnd = state.season + years;
@@ -374,6 +376,7 @@ function aiMarket(state: GameState, rng: Rng) {
     const prestige = state.leagues[state.teams[teamId].leagueSlug].prestige;
     moveToTeam(state, p, teamId);
     state.teams[teamId].chemistry = clamp((state.teams[teamId].chemistry ?? 60) - 6, 0, 100);
+    newcomerPenalty(state, teamId);
     p.salary = marketAsk(state, p, teamId);
     p.contractEnd = state.season + randInt(rng, 1, 3);
     free.splice(free.indexOf(p), 1);

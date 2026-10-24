@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { championIcon, type Champion } from '../game/ddragon';
 import { focusInfo, FOCUSES, INTENSITIES } from '../game/training';
-import { ATTR_LABEL, type GameState, type GrowthEntry } from '../game/types';
+import { collectiveOf } from '../game/collective';
+import { ATTR_LABEL, COLLECTIVE_LABEL, type GameState, type GrowthEntry } from '../game/types';
 import { trainedFocus, trainThisWeek } from '../game/week';
 
 interface Props {
@@ -16,6 +17,7 @@ export function TrainingTab({ game, champions, onChange }: Props) {
   const trained = trainedFocus(game);
   const offseason = game.phase === 'offseason';
   const locked = !!trained || offseason;
+  const collective = collectiveOf(game, game.coach.teamId!);
   const set = (patch: Partial<GameState['training']>) =>
     onChange({ ...game, training: { ...game.training, ...patch } });
 
@@ -45,10 +47,15 @@ export function TrainingTab({ game, champions, onChange }: Props) {
         </section>
       )}
 
-      <section className={`panel ${locked ? 'locked' : ''}`}>
-        <h3>Foco das scrims</h3>
+      {[
+        { title: 'Treino individual', hint: 'Cada jogador evolui um atributo.', list: FOCUSES.filter((f) => !f.collective) },
+        { title: 'Treino coletivo', hint: 'O time evolui junto: rotações, lutas, visão, calls e draft.', list: FOCUSES.filter((f) => f.collective) },
+      ].map((group) => (
+      <section key={group.title} className={`panel ${locked ? 'locked' : ''}`}>
+        <h3>{group.title}</h3>
+        <p className="muted small">{group.hint}</p>
         <div className="choice-grid">
-          {FOCUSES.map((f) => (
+          {group.list.map((f) => (
             <button
               key={f.id}
               disabled={locked}
@@ -57,7 +64,11 @@ export function TrainingTab({ game, champions, onChange }: Props) {
             >
               <strong>{f.label}</strong>
               <span className="muted small">{f.description}</span>
-              {f.id === 'draft' ? (
+              {f.collective ? (
+                <span className="choice-attr">
+                  Time: {COLLECTIVE_LABEL[f.collective]} ({Math.round(collective[f.collective])})
+                </span>
+              ) : f.id === 'draft' ? (
                 <span className="choice-attr">Aprende campeões</span>
               ) : f.id === 'rest' ? (
                 <span className="choice-attr">+ Moral</span>
@@ -68,6 +79,7 @@ export function TrainingTab({ game, champions, onChange }: Props) {
           ))}
         </div>
       </section>
+      ))}
 
       <section className={`panel ${locked ? 'locked' : ''}`}>
         <h3>Intensidade</h3>
@@ -106,6 +118,13 @@ export function GrowthList({ game, growth }: { game: GameState; growth: GrowthEn
   return (
     <ul className="growth">
       {growth.map((g, i) => {
+        if (g.attr === 'collective') {
+          return (
+            <li key={i}>
+              <strong>Time</strong> <span className="up">{g.value}</span>
+            </li>
+          );
+        }
         const p = game.players[g.playerId];
         if (!p) return null;
         return (

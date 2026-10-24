@@ -1,6 +1,7 @@
 import { championsForRole, type Champion } from './ddragon';
 import { clamp, pick, type Rng } from './random';
-import type { Attributes, GameState, GrowthEntry, Intensity, Player, TrainingFocus } from './types';
+import { changeCollective } from './collective';
+import { COLLECTIVE_LABEL, type Attributes, type Collective, type GameState, type GrowthEntry, type Intensity, type Player, type TrainingFocus } from './types';
 import { overall } from './world';
 
 export interface FocusInfo {
@@ -9,6 +10,8 @@ export interface FocusInfo {
   description: string;
   /** atributo que evolui com esse foco */
   attr?: keyof Attributes;
+  /** atributo coletivo do time que evolui (focos coletivos) */
+  collective?: keyof Collective;
 }
 
 export const FOCUSES: FocusInfo[] = [
@@ -42,6 +45,36 @@ export const FOCUSES: FocusInfo[] = [
     description: 'Estudo do meta e campeões novos. Jogadores podem aprender campeões; bônus no draft.',
   },
   {
+    id: 'team_rotations',
+    label: 'Scrims de rotação',
+    description: 'Movimentação em grupo, troca de rotas e pressão no mapa. Rende no mid game e nos objetivos.',
+    collective: 'rotations',
+  },
+  {
+    id: 'team_fights',
+    label: 'Teamfight 5x5',
+    description: 'Engage, foco no alvo certo e proteção do carry. Rende nas lutas do mid e do late.',
+    collective: 'teamfight',
+  },
+  {
+    id: 'team_vision',
+    label: 'Visão e objetivos',
+    description: 'Wards, sweeps e negar visão. Mais pickoffs e Barões seguros.',
+    collective: 'vision',
+  },
+  {
+    id: 'team_comms',
+    label: 'Revisão de VODs',
+    description: 'Calls mais rápidas e todos na mesma página. Menos dias ruins e moral mais estável.',
+    collective: 'comms',
+  },
+  {
+    id: 'team_prep',
+    label: 'Preparação de draft',
+    description: 'Estudo do adversário e do meta. Bônus no draft e nos confrontos.',
+    collective: 'prep',
+  },
+  {
     id: 'rest',
     label: 'Descanso',
     description: 'Semana leve para recuperar a cabeça. Moral sobe bastante, mas ninguém evolui.',
@@ -61,7 +94,18 @@ export function focusInfo(id: TrainingFocus): FocusInfo {
 
 /** Times controlados pelo computador escolhem um foco aleatório a cada semana. */
 export function aiFocus(rng: Rng): TrainingFocus {
-  return pick(rng, ['early', 'teamfight', 'objectives', 'mechanics', 'draft'] as TrainingFocus[]);
+  return pick(rng, [
+    'early',
+    'teamfight',
+    'objectives',
+    'mechanics',
+    'draft',
+    'team_rotations',
+    'team_fights',
+    'team_vision',
+    'team_comms',
+    'team_prep',
+  ] as TrainingFocus[]);
 }
 
 function growthChance(p: Player): number {
@@ -85,6 +129,18 @@ export function applyTraining(
   const info = focusInfo(focus);
   const level = INTENSITIES.find((i) => i.id === intensity)!;
   const growth: GrowthEntry[] = [];
+
+  // Foco coletivo: o time evolui junto (o atributo do time sobe), e a moral segue a intensidade.
+  if (info.collective) {
+    for (const id of state.teams[teamId].playerIds) {
+      const p = state.players[id];
+      p.morale = clamp(p.morale + level.morale, 0, 100);
+    }
+    const gain = Math.round((2 + rng() * 2) * level.growth * growthBoost * 10) / 10;
+    changeCollective(state, teamId, info.collective, gain);
+    growth.push({ playerId: '', attr: 'collective', value: `${COLLECTIVE_LABEL[info.collective]} +${gain}` });
+    return growth;
+  }
 
   for (const id of state.teams[teamId].playerIds) {
     const p = state.players[id];

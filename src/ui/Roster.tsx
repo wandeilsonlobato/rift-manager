@@ -3,6 +3,7 @@ import { championIcon } from '../game/ddragon';
 import { ATTR_LABEL, ROLE_LABEL, type Attributes, type GameState } from '../game/types';
 import { overall, starters } from '../game/world';
 import { FormBadge, Img, money, Rating } from './common';
+import { CollectivePanel } from './CollectivePanel';
 import { LineupPanel } from './LineupPanel';
 import { PlayerLink, PlayerName } from './PlayerModal';
 
@@ -16,6 +17,7 @@ export function Roster({ game, teamId, onChange }: { game: GameState; teamId: st
     <>
       <h2>Elenco</h2>
       <LineupPanel game={game} onChange={onChange} onOpenPlayer={openPlayer} />
+      <CollectivePanel game={game} teamId={teamId} />
       <p className="muted">Química do elenco: <strong>{Math.round(game.teams[teamId].chemistry ?? 60)}/100</strong>. Cresce com o tempo juntos e cai com contratações e conflitos.</p>
       <div className="panel table-wrap">
         <table>
