@@ -3,7 +3,7 @@ import { loadChampions, type Champion } from './game/ddragon';
 import { loadGame, saveGame } from './game/save';
 import type { GameState } from './game/types';
 import { renameCompetitions } from './game/season';
-import { repairChampionPools } from './game/world';
+import { applyProPools, repairChampionPools } from './game/world';
 import { Hub } from './ui/Hub';
 import { NewCareer } from './ui/NewCareer';
 import { Proposals } from './ui/Proposals';
@@ -34,7 +34,12 @@ export default function App() {
 
   // Corrige pools de campeões de saves antigos assim que os campeões carregam.
   useEffect(() => {
-    if (game && champions && !game.poolsFixed) setGame(repairChampionPools(game, champions));
+    if (!game || !champions) return;
+    if (!game.poolsFixed) setGame(repairChampionPools(game, champions));
+    else {
+      const withPro = applyProPools(game, champions);
+      if (withPro !== game) setGame(withPro);
+    }
   }, [game, champions]);
 
   // Saves antigos: nomes das competições atualizados para os oficiais.

@@ -11,7 +11,8 @@
     "import:offline": "node scripts/import-lolesports.mjs --offline",
     "import:roles": "node scripts/import-champion-roles.mjs",
     "import:soloq": "node scripts/import-soloq.mjs",
-    "dev:mobile": "vite --host"
+    "dev:mobile": "vite --host",
+    "import:pro": "node scripts/import-pro.mjs"
   },
   "dependencies": {
     "react": "^18.3.1",

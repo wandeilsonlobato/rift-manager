@@ -2,6 +2,7 @@ import leagueData from '../data/leagues.json';
 import { championsForRole, type Champion } from './ddragon';
 import { clamp, createRng, gauss, pick, randInt, shuffle, type Rng } from './random';
 import { newPatch } from './meta';
+import { proChampions, proDataVersion, realTeamBonus } from './pro';
 import { enterPhase } from './season';
 import { generateStaffMarket } from './staff';
 import {
@@ -53,6 +54,9 @@ export const RAW_LEAGUES = leagueData.leagues as RawLeague[];
 const RAW_FREE_AGENTS = leagueData.freeAgents as RawFreeAgent[];
 
 export const START_SEASON = 2026;
+
+/** Campeões no pool inicial de cada jogador. */
+const POOL_SIZE = 5;
 
 /** Reservas que um time mantém além dos 5 titulares. */
 const MAX_SUBS = 2;
@@ -124,8 +128,10 @@ class WorldBuilder {
   private poolByRegion = new Map<string | null, RawFreeAgent[]>();
   private regionPrestige = new Map<string, number>();
   private championsByRole: Record<Role, Champion[]>;
+  private championIds: Set<string>;
 
   constructor(champions: Champion[]) {
+    this.championIds = new Set(champions.map((c) => c.id));
     this.championsByRole = Object.fromEntries(
       ROLES.map((r) => [r, championsForRole(champions, r)]),
     ) as Record<Role, Champion[]>;
@@ -173,7 +179,11 @@ class WorldBuilder {
     const decline = Math.max(0, age - 28) * 1.5;
     const base = 43 + prestige * 6 + teamBonus + xp * 13 - decline + gauss(rng) * 2.5;
     const attrs = makeAttributes(rng, base);
-    const pool = shuffle(rng, this.championsByRole[role]).slice(0, randInt(rng, 3, 6));
+    // Pool inicial de 5: os campeões mais usados pelo pro em partidas oficiais, completando com a rota.
+    // O resto ele libera treinando "Draft e pool".
+    const real = proChampions(raw.id).filter((id) => this.championIds.has(id)).slice(0, POOL_SIZE);
+    const filler = shuffle(rng, this.championsByRole[role]).filter((c) => !real.includes(c.id));
+    const pool = [...real, ...filler.slice(0, POOL_SIZE - real.length).map((c) => c.id)];
     const player: Player = {
       id: raw.id,
       nick: raw.nick,
@@ -187,7 +197,7 @@ class WorldBuilder {
       morale: randInt(rng, 55, 85),
       salary: 0,
       contractEnd: teamId ? START_SEASON + randInt(rng, 0, 2) : 0,
-      champions: pool.map((c) => c.id),
+      champions: pool,
       teamId,
       region,
     };
@@ -289,7 +299,9 @@ class WorldBuilder {
       if (this.teams[rt.id]) continue;
       const rng = createRng(`team-${rt.id}`);
       const team = this.newTeam(rt, main.slug);
-      const candidates = this.freshPlayers(rt, team.id, main.prestige, gauss(rng) * 3, rl.region);
+      // Força do elenco pelo desempenho real em 2026 (ou um sorteio leve sem dados).
+      const bonus = realTeamBonus(main.slug, rt.code) ?? gauss(rng) * 3;
+      const candidates = this.freshPlayers(rt, team.id, main.prestige, bonus, rl.region);
       leftovers.set(team.id, this.assemble(team, candidates, rl.region, main.prestige, rng));
       main.teamIds.push(team.id);
     }
@@ -320,7 +332,7 @@ class WorldBuilder {
       const team = this.newTeam({ ...raw, id }, academy.slug);
       if (parent) team.parentTeamId = parent.id;
       const candidates = [
-        ...this.freshPlayers(raw, team.id, academy.prestige, gauss(rng) * 3, rl.region),
+        ...this.freshPlayers(raw, team.id, academy.prestige, realTeamBonus(academy.slug, raw.code) ?? gauss(rng) * 3, rl.region),
         ...(parent ? (leftovers.get(parent.id) ?? []) : []),
       ];
       if (parent) leftovers.delete(parent.id);
@@ -429,6 +441,7 @@ export function createCareer(
     training: { focus: 'teamfight', intensity: 'normal' },
     lastReport: null,
     poolsFixed: true,
+    proPoolsVersion: proDataVersion() ?? undefined,
     refused: [],
     review: null,
     career: [],
@@ -483,4 +496,19 @@ export function repairChampionPools(state: GameState, champions: Champion[]): Ga
     players[p.id] = { ...p, champions: [...fits, ...options.slice(0, wanted - fits.length).map((c) => c.id)] };
   }
   return { ...state, players, poolsFixed: true };
+}
+
+/** Saves existentes: aplica os pools reais dos pros quando os dados de partidas oficiais chegam ou mudam. */
+export function applyProPools(state: GameState, champions: Champion[]): GameState {
+  const version = proDataVersion();
+  if (!version || state.proPoolsVersion === version) return state;
+  const valid = new Set(champions.map((c) => c.id));
+  const players: Record<string, Player> = {};
+  for (const p of Object.values(state.players)) {
+    const real = proChampions(p.id).filter((id) => valid.has(id)).slice(0, POOL_SIZE);
+    players[p.id] = real.length
+      ? { ...p, champions: [...real, ...p.champions.filter((c) => !real.includes(c))].slice(0, POOL_SIZE) }
+      : p;
+  }
+  return { ...state, players, proPoolsVersion: version };
 }

@@ -418,6 +418,8 @@ export interface GameState {
   evolution?: { playerId: string; from: number; to: number }[];
   /** títulos do coach já comemorados (cerimônia mostrada) */
   celebrated?: string[];
+  /** versão dos dados de partidas oficiais já aplicada aos pools */
+  proPoolsVersion?: string;
   /** pools de campeões já corrigidos para as rotas reais */
   poolsFixed?: boolean;
   /** estatísticas por jogador e temporada */
