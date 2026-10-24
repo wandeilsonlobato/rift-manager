@@ -15,6 +15,8 @@ npm run dev
 
 Depois, abra http://localhost:5173 no navegador.
 
+Para jogar no celular (na mesma rede Wi-Fi do computador), rode `npm run dev:mobile` e abra no celular o endereço que aparece em **Network** (algo como `http://192.168.0.10:5173`).
+
 ## O que dá para fazer
 
 - **Carreira:** crie seu coach (nome, país, estilo) e comece na 2ª divisão da liga escolhida (CBLOL → Circuito Desafiante, LCK → LCK Challengers…). Bons resultados trazem propostas de times maiores.
