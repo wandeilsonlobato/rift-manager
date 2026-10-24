@@ -9,21 +9,23 @@ import { CompetitionsTab } from './CompetitionsTab';
 import { HistoryTab } from './HistoryTab';
 import { Home } from './Home';
 import { PlayerLink, PlayerModal } from './PlayerModal';
+import { ChampionCeremony } from './ResultSplash';
 import { MarketTab } from './MarketTab';
 import { SeriesModal } from './MatchModal';
 import { Roster } from './Roster';
 import { TrainingTab } from './TrainingTab';
+import { Icon, type IconName } from './Icon';
 
 export type Tab = 'home' | 'roster' | 'training' | 'competitions' | 'market' | 'club' | 'history';
 
-const TABS: { id: Tab; label: string; soon?: boolean }[] = [
-  { id: 'home', label: 'Início' },
-  { id: 'roster', label: 'Elenco' },
-  { id: 'training', label: 'Treino' },
-  { id: 'competitions', label: 'Competições' },
-  { id: 'market', label: 'Mercado' },
-  { id: 'club', label: 'Clube' },
-  { id: 'history', label: 'História' },
+const TABS: { id: Tab; label: string; icon: IconName; soon?: boolean }[] = [
+  { id: 'home', label: 'Início', icon: 'home' },
+  { id: 'roster', label: 'Elenco', icon: 'users' },
+  { id: 'training', label: 'Treino', icon: 'dumbbell' },
+  { id: 'competitions', label: 'Competições', icon: 'bracket' },
+  { id: 'market', label: 'Mercado', icon: 'coins' },
+  { id: 'club', label: 'Clube', icon: 'building' },
+  { id: 'history', label: 'História', icon: 'book' },
 ];
 
 interface Props {
@@ -37,6 +39,10 @@ export function Hub({ game, champions, onChange, onExit }: Props) {
   const [tab, setTab] = useState<Tab>('home');
   const [openSeries, setOpenSeries] = useState<Series | null>(null);
   const [openPlayer, setOpenPlayer] = useState<string | null>(null);
+  // Título conquistado e ainda não comemorado abre a cerimônia.
+  const celebration = game.competitions.find(
+    (c) => c.done && c.championId === game.coach.teamId && !(game.celebrated ?? []).includes(c.id),
+  );
   const team = game.teams[game.coach.teamId!];
   const league = game.leagues[team.leagueSlug];
 
@@ -57,7 +63,7 @@ export function Hub({ game, champions, onChange, onExit }: Props) {
         </div>
         {game.pendingEvent && (
           <button className="event-alert" onClick={() => setTab('home')}>
-            ⚠ Decisão pendente
+            <Icon name="warning" size={16} /> Decisão pendente
           </button>
         )}
         <nav>
@@ -68,7 +74,8 @@ export function Hub({ game, champions, onChange, onExit }: Props) {
               disabled={t.soon}
               onClick={() => setTab(t.id)}
             >
-              {t.label}
+              <Icon name={t.icon} />
+              <span>{t.label}</span>
               {t.soon && <span className="badge">em breve</span>}
             </button>
           ))}
@@ -97,6 +104,13 @@ export function Hub({ game, champions, onChange, onExit }: Props) {
       </main>
       {openSeries && <SeriesModal game={game} series={openSeries} onClose={() => setOpenSeries(null)} />}
       {openPlayer && <PlayerModal game={game} playerId={openPlayer} onClose={() => setOpenPlayer(null)} />}
+      {celebration && (
+        <ChampionCeremony
+          game={game}
+          comp={celebration}
+          onClose={() => onChange({ ...game, celebrated: [...(game.celebrated ?? []), celebration.id] })}
+        />
+      )}
     </div>
     </PlayerLink.Provider>
   );

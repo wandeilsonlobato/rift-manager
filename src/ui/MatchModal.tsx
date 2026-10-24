@@ -3,6 +3,7 @@ import { championIcon } from '../game/ddragon';
 import { ROLE_LABEL, type Game, type GameState, type PlayerLine, type Series } from '../game/types';
 import { Img } from './common';
 import { LiveMatch } from './LiveMatch';
+import { Icon } from './Icon';
 
 interface Props {
   game: GameState;
@@ -57,7 +58,7 @@ export function SeriesModal({ game, series, onClose }: Props) {
         )}
         {current?.detail?.rich && (
           <button className="btn small primary" onClick={() => setWatching(true)}>
-            ▶ Assistir lance a lance
+            <Icon name="play" size={14} /> Assistir lance a lance
           </button>
         )}
         {watching && current && (
@@ -115,13 +116,13 @@ function GameDetail({ game, match }: { game: GameState; match: Game }) {
       <div className="sb-stats">
         <div className="sb-stat">
           <span className="blue-text">
-            {blue.code} {match.winner === blue.id && '🏆'}
+            {blue.code} {match.winner === blue.id && <Icon name="trophy" size={14} />}
           </span>
           <span className="muted small">
             {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
           </span>
           <span className="red-text">
-            {match.winner === red.id && '🏆'} {red.code}
+            {match.winner === red.id && <Icon name="trophy" size={14} />} {red.code}
           </span>
         </div>
         {stats.map(([label, bv, rv]) => (

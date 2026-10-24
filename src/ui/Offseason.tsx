@@ -5,6 +5,7 @@ import type { GameState } from '../game/types';
 import { acceptProposal, teamStrength } from '../game/world';
 import { Img, money, Rating } from './common';
 import type { Tab } from './Hub';
+import { Icon } from './Icon';
 
 interface Props {
   game: GameState;
@@ -48,7 +49,7 @@ export function Offseason({ game, champions, onChange, onTab }: Props) {
               </strong>
             </div>
           </div>
-          {review.titles.length > 0 && <p>🏆 Títulos: {review.titles.join(', ')}</p>}
+          {review.titles.length > 0 && <p className="warn-line"><Icon name="trophy" /> Títulos: {review.titles.join(', ')}</p>}
         </section>
       )}
 
@@ -96,12 +97,13 @@ export function Offseason({ game, champions, onChange, onTab }: Props) {
           </p>
           {blockers.map((b) => (
             <p key={b} className="down small">
-              ⚠ {b}
+              <Icon name="warning" size={14} /> {b}
             </p>
           ))}
         </div>
         <button className="btn primary big" disabled={busy || blockers.length > 0} onClick={start}>
-          {busy ? 'Preparando…' : `Iniciar temporada ${game.season + 1} ▶`}
+          {busy ? 'Preparando…' : `Iniciar temporada ${game.season + 1}`}
+          {!busy && <Icon name="play" />}
         </button>
       </section>
 

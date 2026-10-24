@@ -1,5 +1,6 @@
 import { COLLECTIVE_KEYS, collectiveOf } from '../game/collective';
 import { COLLECTIVE_LABEL, type GameState } from '../game/types';
+import { InfoTip } from './Icon';
 
 /** Atributos coletivos do time comparados com a média da liga. */
 export function CollectivePanel({ game, teamId }: { game: GameState; teamId: string }) {
@@ -10,11 +11,13 @@ export function CollectivePanel({ game, teamId }: { game: GameState; teamId: str
 
   return (
     <section className="panel">
-      <h3>Time</h3>
-      <p className="muted small">
-        Como os cinco jogam juntos. Sobe com os treinos coletivos, cai devagar sem treino e cai com contratações. A marca
-        mostra a média da {league.name}.
-      </p>
+      <h3>
+        Time
+        <InfoTip>
+          Como os cinco jogam juntos. Sobe com os treinos coletivos, cai devagar sem treino e com contratações. A marca
+          dourada é a média da {league.name}.
+        </InfoTip>
+      </h3>
       {COLLECTIVE_KEYS.map((key) => {
         const value = mine[key];
         const avg = average(key);

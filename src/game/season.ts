@@ -482,6 +482,28 @@ export function seriesThisWeek(state: GameState, comp: Competition): Series[] {
   return seriesOf(state, st.rounds.slice(st.played, st.played + roundsPerWeek(st)).flat());
 }
 
+/** Próxima série do time na fase atual (mesmo que seja em semanas futuras), e em quantas semanas. */
+export function nextSeriesFor(state: GameState, teamId: string): { series: Series; weeksAway: number } | null {
+  for (const comp of currentCompetitions(state)) {
+    if (comp.done) continue;
+    const st = comp.stages[comp.stageIndex];
+    for (let r = st.played; r < st.rounds.length; r++) {
+      const s = seriesOf(state, st.rounds[r]).find((x) => !x.winner && (x.a === teamId || x.b === teamId));
+      if (s) return { series: s, weeksAway: Math.floor((r - st.played) / roundsPerWeek(st)) };
+    }
+  }
+  return null;
+}
+
+/** Últimos resultados do time na temporada (V/D), do mais antigo para o mais recente. */
+export function recentForm(state: GameState, teamId: string, count = 5): ('V' | 'D')[] {
+  return Object.values(state.series)
+    .filter((s) => s.winner && (s.a === teamId || s.b === teamId))
+    .sort((a, b) => (a.week ?? 0) - (b.week ?? 0))
+    .slice(-count)
+    .map((s) => (s.winner === teamId ? 'V' : 'D'));
+}
+
 /** Joga a semana de todas as competições da fase atual. Retorna as séries jogadas. */
 export function playWeek(state: GameState, ctx: WeekContext): Series[] {
   const played: Series[] = [];

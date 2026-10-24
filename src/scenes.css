@@ -1,0 +1,520 @@
+/* Cenas do jogo: cartas de jogador, próximo jogo, caixa de entrada,
+   telas de vitória/derrota e cerimônia de título. */
+
+/* ----------------------------------------------------------- Cartas */
+.card-row {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(165px, 1fr));
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.pcard {
+  --c1: #6b4a2b;
+  --c2: #3a2817;
+  --edge: #9a6b3d;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 10px 20px;
+  color: var(--text);
+  cursor: pointer;
+  border: 2px solid var(--edge);
+  background:
+    radial-gradient(ellipse at 50% 18%, rgba(255, 255, 255, 0.16), transparent 55%),
+    linear-gradient(160deg, var(--c1) 0%, var(--c2) 70%, #0a0f18 100%);
+  clip-path: polygon(10px 0, calc(100% - 10px) 0, 100% 10px, 100% calc(100% - 14px), 50% 100%, 0 calc(100% - 14px), 0 10px);
+  transition: transform 0.15s, filter 0.15s;
+  font-family: var(--font-ui);
+}
+
+.pcard:hover {
+  transform: translateY(-3px);
+  filter: brightness(1.12);
+}
+
+.pcard.tier-silver {
+  --c1: #6f7a87;
+  --c2: #39414c;
+  --edge: #b8c2cc;
+}
+
+.pcard.tier-gold {
+  --c1: #a07a34;
+  --c2: #4f3a14;
+  --edge: #f0d48a;
+}
+
+.pcard.tier-elite {
+  --c1: #3b2a8f;
+  --c2: #0d3b4f;
+  --edge: #8ee6ff;
+}
+
+/* Reflexo que passa pela carta elite */
+.pcard.tier-elite::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, 0.18) 45%, transparent 60%);
+  background-size: 250% 100%;
+  animation: shine 4s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes shine {
+  from {
+    background-position: 150% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+
+.pcard.bench {
+  opacity: 0.72;
+}
+
+.pcard-head {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.pcard-ovr {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1;
+}
+
+.pcard-ovr strong {
+  font-size: 30px;
+  font-weight: 700;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+}
+
+.pcard-ovr img {
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
+}
+
+.pcard-team {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+
+.pcard-photo-wrap {
+  width: 78%;
+  aspect-ratio: 1;
+  margin-top: -18px;
+}
+
+.pcard-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.55));
+  background: transparent;
+}
+
+.pcard-name {
+  width: 100%;
+  text-align: center;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-top: 1px solid rgba(255, 255, 255, 0.25);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.25);
+  padding: 2px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pcard-attrs {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  width: 100%;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.pcard-attrs span {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.pcard-attrs em {
+  font-style: normal;
+  font-size: 10px;
+  opacity: 0.75;
+  letter-spacing: 0.06em;
+}
+
+.pcard-foot {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 12px;
+  opacity: 0.9;
+}
+
+.pcard.compact .pcard-name {
+  font-size: 15px;
+}
+
+.pcard.compact .pcard-ovr strong {
+  font-size: 24px;
+}
+
+/* ------------------------------------------------------ Próximo jogo */
+.next-match {
+  position: relative;
+  margin-bottom: 16px;
+  border: 1px solid transparent;
+  border-image: var(--frame) 1;
+  background:
+    linear-gradient(90deg, rgba(3, 151, 171, 0.18), transparent 35%, transparent 65%, rgba(232, 64, 87, 0.16)),
+    linear-gradient(180deg, #0e1a2e, #060d19);
+  overflow: hidden;
+}
+
+.nm-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  font-family: var(--font-ui);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-size: 13px;
+  color: var(--gold);
+  border-bottom: 1px solid var(--gold-deep);
+}
+
+.nm-comp {
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+}
+
+.nm-when {
+  margin-left: auto;
+  color: var(--blue);
+}
+
+.nm-body {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  padding: 18px 16px 20px;
+}
+
+.nm-team {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+  font-family: var(--font-ui);
+}
+
+.nm-team strong {
+  font-size: 20px;
+  letter-spacing: 0.04em;
+}
+
+.nm-logo {
+  width: 96px;
+  height: 96px;
+  object-fit: contain;
+}
+
+.nm-team.mine .nm-logo {
+  filter: drop-shadow(0 0 18px rgba(3, 151, 171, 0.55));
+}
+
+.nm-team.rival .nm-logo {
+  filter: drop-shadow(0 0 18px rgba(232, 64, 87, 0.45));
+}
+
+.nm-strength {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.nm-vs {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.nm-vs strong {
+  font-family: var(--font-title);
+  font-size: 40px;
+  color: var(--gold);
+  text-shadow: 0 0 24px rgba(200, 170, 110, 0.6);
+}
+
+/* ------------------------------------------------- Caixa de entrada */
+.inbox ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mail {
+  border-left: 3px solid var(--gold-deep);
+  background: rgba(10, 20, 38, 0.7);
+}
+
+.mail.good {
+  border-left-color: var(--green);
+}
+
+.mail.bad {
+  border-left-color: var(--red);
+}
+
+.mail-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  background: none;
+  border: none;
+  color: var(--text);
+  padding: 10px 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.mail-row:hover {
+  background: rgba(200, 170, 110, 0.06);
+}
+
+/* Remetente num losango, como os ícones do cliente */
+.mail-avatar {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gold);
+  border: 1px solid var(--gold-dark);
+  background: radial-gradient(circle, #1a2a44, #0a1428);
+  transform: rotate(45deg);
+}
+
+.mail-avatar .icon {
+  transform: rotate(-45deg);
+}
+
+.mail-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.mail-from {
+  font-family: var(--font-ui);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.mail-subject {
+  font-size: 14px;
+}
+
+.mail-body {
+  padding: 0 12px 12px 60px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.mail-body p {
+  margin: 0 0 8px;
+}
+
+/* ------------------------------------------- Vitória / Derrota / Título */
+.splash-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: radial-gradient(ellipse at center, rgba(10, 20, 40, 0.88), rgba(1, 6, 12, 0.97));
+  animation: fade-in 0.3s ease-out;
+  overflow-y: auto;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+.result-splash,
+.ceremony-box {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  text-align: center;
+  max-width: 560px;
+  width: 100%;
+}
+
+.ceremony-box {
+  max-width: 820px;
+}
+
+/* Título grande em dourado (vitória) ou cinza avermelhado (derrota) */
+.splash-title {
+  margin: 0;
+  font-family: var(--font-title);
+  font-size: clamp(48px, 11vw, 92px);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 1;
+  background: linear-gradient(180deg, #fff6d8 0%, #f0d48a 40%, #c89b3c 70%, #785a28 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 22px rgba(200, 170, 110, 0.45));
+  animation: title-in 0.6s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+
+.splash-title.defeat,
+.defeat .splash-title {
+  background: linear-gradient(180deg, #e9e3d6 0%, #9a8f86 50%, #5b4a4a 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  filter: drop-shadow(0 0 18px rgba(232, 64, 87, 0.35));
+}
+
+@keyframes title-in {
+  from {
+    opacity: 0;
+    transform: scale(1.4);
+    letter-spacing: 0.4em;
+  }
+}
+
+.splash-series {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.splash-row {
+  display: grid;
+  grid-template-columns: 48px auto 48px 1fr;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 14px;
+  background: rgba(10, 20, 38, 0.85);
+  border-left: 3px solid var(--green);
+  font-family: var(--font-ui);
+  text-align: left;
+}
+
+.splash-row.loss {
+  border-left-color: var(--red);
+}
+
+.splash-row strong {
+  font-size: 26px;
+  letter-spacing: 0.04em;
+}
+
+.splash-row .team-logo {
+  width: 44px;
+  height: 44px;
+}
+
+.splash-mvp {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 170px;
+}
+
+.ceremony-trophy {
+  color: var(--gold);
+  filter: drop-shadow(0 0 30px rgba(240, 212, 138, 0.8));
+  animation: trophy-in 0.8s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+
+@keyframes trophy-in {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.6);
+  }
+}
+
+.ceremony-team {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-family: var(--font-title);
+  font-size: 24px;
+}
+
+.ceremony-cards {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  width: min(760px, 92vw);
+}
+
+.confetti {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.confetti i {
+  position: absolute;
+  top: -20px;
+  width: 8px;
+  height: 14px;
+  opacity: 0.9;
+  animation: confetti-fall linear infinite;
+}
+
+@keyframes confetti-fall {
+  to {
+    transform: translateY(110vh) rotate(720deg);
+  }
+}

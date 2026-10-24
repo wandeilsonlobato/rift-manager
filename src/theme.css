@@ -1,0 +1,690 @@
+/* Tema "hextech": identidade visual de jogo inspirada no cliente do LoL,
+   com o roxo da logo do Rift Manager. Carregado depois da base (styles.css). */
+
+:root {
+  --bg: #010a13;
+  --panel: #0a1428;
+  --panel-2: #0f1d33;
+  --border: #1c2a3d;
+  --text: #f0e6d2;
+  --muted: #a09b8c;
+  --gold: #c8aa6e;
+  --gold-2: #f0e6d2;
+  --gold-3: #c89b3c;
+  --gold-dark: #785a28;
+  --gold-deep: #463714;
+  --blue: #0ac8b9;
+  --hex: #0397ab;
+  --hex-dark: #005a82;
+  --purple: #7b4dff;
+  --frame: linear-gradient(180deg, #785a28 0%, #463714 45%, #1e2328 100%);
+  --font-title: 'Cinzel', 'Times New Roman', serif;
+  --font-ui: 'Barlow Condensed', 'Arial Narrow', sans-serif;
+  font-family: 'Barlow', 'Segoe UI', system-ui, sans-serif;
+  font-size: 15px;
+}
+
+body {
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(123, 77, 255, 0.16), transparent 60%),
+    radial-gradient(ellipse 60% 40% at 100% 100%, rgba(3, 151, 171, 0.1), transparent 60%),
+    linear-gradient(180deg, #050d1a 0%, var(--bg) 100%);
+  background-attachment: fixed;
+  color: var(--text);
+}
+
+::selection {
+  background: rgba(200, 170, 110, 0.35);
+}
+
+/* Barras de rolagem discretas, douradas */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--gold-dark) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--gold-dark);
+}
+
+/* ----------------------------------------------------------- Tipografia */
+h1,
+h2 {
+  font-family: var(--font-title);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--gold-2);
+}
+
+h2 {
+  font-size: 24px;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
+}
+
+h3 {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gold);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Losango dourado antes dos títulos de seção */
+h3::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  flex-shrink: 0;
+  transform: rotate(45deg);
+  border: 1px solid var(--gold);
+  background: rgba(200, 170, 110, 0.25);
+}
+
+h4 {
+  font-family: var(--font-ui);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.icon {
+  display: inline-block;
+  vertical-align: -3px;
+  flex-shrink: 0;
+}
+
+/* -------------------------------------------------------------- Molduras */
+.panel {
+  position: relative;
+  background: linear-gradient(180deg, rgba(14, 26, 46, 0.94), rgba(6, 13, 25, 0.96));
+  border: 1px solid transparent;
+  border-image: var(--frame) 1;
+  border-radius: 0;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(240, 230, 210, 0.04);
+}
+
+/* Fio de luz dourado no topo de cada moldura */
+.panel::before {
+  content: '';
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  top: -1px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  pointer-events: none;
+}
+
+.stat {
+  gap: 2px;
+}
+
+.stat > .muted.small:first-child {
+  font-family: var(--font-ui);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 12px;
+  color: var(--gold);
+}
+
+.stat strong {
+  font-family: var(--font-ui);
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+/* --------------------------------------------------------------- Botões */
+.btn {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #cdbe91;
+  background: linear-gradient(180deg, #1e2328 0%, #12171d 100%);
+  border: 2px solid transparent;
+  border-image: linear-gradient(180deg, var(--gold) 0%, var(--gold-dark) 100%) 1;
+  border-radius: 0;
+  padding: 10px 22px;
+  transition: color 0.15s, box-shadow 0.15s, background 0.15s, transform 0.1s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn:hover:not(:disabled) {
+  color: var(--gold-2);
+  background: linear-gradient(180deg, #2a3038 0%, #1a2027 100%);
+  box-shadow: 0 0 16px rgba(200, 170, 110, 0.35);
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+/* Ação principal: moldura dourada com brilho hextech */
+.btn.primary {
+  color: #cdfafa;
+  background: linear-gradient(180deg, #0a323c 0%, #091428 100%);
+  border-image: linear-gradient(180deg, var(--gold) 0%, var(--hex) 100%) 1;
+  box-shadow: inset 0 0 18px rgba(10, 200, 185, 0.18);
+  font-weight: 700;
+}
+
+.btn.primary:hover:not(:disabled) {
+  color: #ffffff;
+  background: linear-gradient(180deg, #0d4452 0%, #0a1f38 100%);
+  box-shadow: inset 0 0 22px rgba(10, 200, 185, 0.35), 0 0 22px rgba(10, 200, 185, 0.35);
+}
+
+.btn.big {
+  padding: 14px 34px;
+  font-size: 18px;
+}
+
+.btn.small {
+  padding: 6px 12px;
+  font-size: 13px;
+}
+
+.btn.ghost {
+  border: none;
+  border-image: none;
+  background: transparent;
+  color: var(--gold);
+  box-shadow: none;
+}
+
+.btn.ghost:hover:not(:disabled) {
+  background: rgba(200, 170, 110, 0.08);
+  box-shadow: none;
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  filter: grayscale(0.6);
+}
+
+.link {
+  color: var(--blue);
+  text-decoration: none;
+  border-bottom: 1px dotted var(--blue);
+}
+
+/* ------------------------------------------------------------- Formulários */
+input,
+select {
+  background: #010a13;
+  border: 1px solid #3c3c41;
+  border-radius: 0;
+  color: var(--text);
+  font-family: inherit;
+}
+
+input:focus,
+select:focus {
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 1px rgba(200, 170, 110, 0.35);
+}
+
+label {
+  font-family: var(--font-ui);
+  letter-spacing: 0.06em;
+}
+
+/* --------------------------------------------------------- Menu lateral */
+.sidebar {
+  background: linear-gradient(180deg, #0a1428 0%, #050c18 100%);
+  border-right: 1px solid transparent;
+  border-image: linear-gradient(180deg, var(--gold-dark), var(--gold-deep) 50%, transparent) 1;
+}
+
+.brand span {
+  font-family: var(--font-title);
+  letter-spacing: 0.14em;
+}
+
+.brand img {
+  border-radius: 6px;
+  box-shadow: 0 0 14px rgba(123, 77, 255, 0.45);
+}
+
+.sidebar-team strong {
+  font-family: var(--font-ui);
+  font-size: 16px;
+  letter-spacing: 0.03em;
+}
+
+.nav-item {
+  font-family: var(--font-ui);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  justify-content: flex-start;
+  gap: 12px;
+  transition: color 0.15s, background 0.15s;
+}
+
+.nav-item:hover:not(:disabled) {
+  color: var(--gold-2);
+  background: rgba(200, 170, 110, 0.06);
+}
+
+.nav-item.active {
+  color: var(--gold-2);
+  border-left-color: var(--gold);
+  background: linear-gradient(90deg, rgba(200, 170, 110, 0.18), transparent 85%);
+}
+
+.nav-item .icon {
+  color: var(--gold-dark);
+}
+
+.nav-item.active .icon,
+.nav-item:hover .icon {
+  color: var(--gold);
+}
+
+/* ---------------------------------------------------------------- Abas */
+.tabs {
+  border-bottom: 1px solid var(--gold-deep);
+}
+
+.tab {
+  font-family: var(--font-ui);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.tab.active {
+  color: var(--gold-2);
+  border-bottom-color: var(--gold);
+  text-shadow: 0 0 10px rgba(200, 170, 110, 0.5);
+}
+
+/* -------------------------------------------------------------- Tabelas */
+th {
+  font-family: var(--font-ui);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 12px;
+  color: var(--gold);
+  border-bottom-color: var(--gold-deep);
+}
+
+td {
+  border-bottom-color: rgba(28, 42, 61, 0.7);
+}
+
+tbody tr {
+  transition: background 0.12s;
+}
+
+tbody tr:hover {
+  background: rgba(200, 170, 110, 0.05);
+}
+
+tr.mine {
+  background: linear-gradient(90deg, rgba(200, 170, 110, 0.16), transparent);
+}
+
+/* Nota (OVR) em formato hexagonal, como emblema de jogo */
+.rating {
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 700;
+  border-radius: 0;
+  padding: 2px 9px;
+  clip-path: polygon(14% 0, 86% 0, 100% 50%, 86% 100%, 14% 100%, 0 50%);
+}
+
+.rating.elite {
+  background: linear-gradient(180deg, rgba(10, 200, 185, 0.35), rgba(3, 151, 171, 0.2));
+  color: #cdfafa;
+}
+
+.rating.good {
+  background: linear-gradient(180deg, rgba(63, 191, 127, 0.32), rgba(63, 191, 127, 0.16));
+}
+
+.rating.ok {
+  background: linear-gradient(180deg, rgba(224, 179, 65, 0.3), rgba(224, 179, 65, 0.14));
+}
+
+.rating.low {
+  background: linear-gradient(180deg, rgba(232, 64, 87, 0.3), rgba(232, 64, 87, 0.14));
+}
+
+/* ------------------------------------------------------ Cards de escolha */
+.choice-card,
+.league-card,
+.country-card,
+.comp-chip,
+.lineup-slot,
+.staff-card,
+.review-item,
+.title-card,
+.offer-card {
+  border-radius: 0;
+  background: linear-gradient(180deg, rgba(20, 34, 58, 0.85), rgba(10, 20, 38, 0.85));
+  border: 1px solid var(--border);
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.12s;
+}
+
+.choice-card:hover:not(:disabled),
+.league-card:hover,
+.country-card:hover,
+.comp-chip:hover {
+  border-color: var(--gold-dark);
+  transform: translateY(-1px);
+}
+
+.choice-card.selected,
+.league-card.selected,
+.country-card.selected,
+.comp-chip.active {
+  border-color: var(--gold);
+  box-shadow: inset 0 0 24px rgba(200, 170, 110, 0.18), 0 0 0 1px var(--gold);
+}
+
+.choice-card strong,
+.league-card strong {
+  font-family: var(--font-ui);
+  font-size: 17px;
+  letter-spacing: 0.04em;
+}
+
+.choice-attr {
+  font-family: var(--font-ui);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-size: 12px;
+}
+
+/* --------------------------------------------------------- Linhas de jogo */
+.match-row {
+  border-radius: 0;
+  background: linear-gradient(90deg, rgba(20, 34, 58, 0.9), rgba(10, 20, 38, 0.9));
+  font-family: var(--font-ui);
+  font-size: 15px;
+  letter-spacing: 0.03em;
+}
+
+.match-row.mine {
+  background: linear-gradient(90deg, rgba(200, 170, 110, 0.14), rgba(10, 20, 38, 0.9));
+}
+
+.match-score {
+  font-size: 17px;
+  color: var(--gold-2);
+}
+
+.result-tag {
+  border-radius: 0;
+  font-family: var(--font-ui);
+  letter-spacing: 0.06em;
+}
+
+/* --------------------------------------------------------------- Modais */
+.modal-backdrop {
+  background: rgba(1, 6, 12, 0.78);
+  backdrop-filter: blur(4px);
+}
+
+.modal {
+  border-radius: 0;
+  border: 1px solid transparent;
+  border-image: var(--frame) 1;
+  background: linear-gradient(180deg, #0e1a2e, #060d19);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+}
+
+.modal-close {
+  color: var(--gold);
+}
+
+/* ------------------------------------------------------- Dicas (InfoTip) */
+.info-tip {
+  position: relative;
+  display: inline-flex;
+  vertical-align: middle;
+  margin-left: 6px;
+}
+
+.info-tip-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--gold-dark);
+  cursor: help;
+  display: inline-flex;
+}
+
+.info-tip-btn:hover,
+.info-tip.open .info-tip-btn {
+  color: var(--gold);
+}
+
+.info-tip-box {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: min(300px, 80vw);
+  padding: 10px 12px;
+  background: #010a13;
+  border: 1px solid var(--gold-dark);
+  color: var(--text);
+  font-family: 'Barlow', sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  line-height: 1.4;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+}
+
+/* ------------------------------------------------------- Tela inicial */
+.title-screen {
+  position: relative;
+  overflow: hidden;
+}
+
+.title-bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center 20%;
+  filter: saturate(0.85);
+  transform: scale(1.05);
+  animation: slow-zoom 30s ease-in-out infinite alternate;
+}
+
+.title-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at center, rgba(1, 10, 19, 0.35) 0%, rgba(1, 10, 19, 0.92) 75%),
+    linear-gradient(180deg, rgba(60, 30, 140, 0.35), rgba(1, 10, 19, 0.85));
+}
+
+@keyframes slow-zoom {
+  to {
+    transform: scale(1.14);
+  }
+}
+
+.title-screen > *:not(.title-bg) {
+  position: relative;
+}
+
+.title-screen .subtitle {
+  font-family: var(--font-title);
+  color: var(--gold);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-size: 14px;
+}
+
+.title-actions {
+  flex-direction: column;
+  align-items: stretch;
+  min-width: 260px;
+}
+
+/* ---------------------------------------------------- Destaque do Início */
+.home-hero {
+  position: relative;
+  overflow: hidden;
+  min-height: 170px;
+  display: flex;
+  align-items: flex-end;
+  padding: 22px;
+  margin-bottom: 16px;
+  border: 1px solid transparent;
+  border-image: var(--frame) 1;
+}
+
+.home-hero-bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center 22%;
+}
+
+.home-hero-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(1, 10, 19, 0.95) 0%, rgba(1, 10, 19, 0.65) 55%, rgba(1, 10, 19, 0.25) 100%);
+}
+
+.home-hero-content {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.home-hero-content .team-logo {
+  width: 84px;
+  height: 84px;
+  filter: drop-shadow(0 4px 14px rgba(0, 0, 0, 0.7));
+}
+
+.home-hero h1 {
+  margin: 0;
+  font-size: clamp(22px, 4vw, 34px);
+  text-shadow: 0 3px 16px rgba(0, 0, 0, 0.8);
+}
+
+.hero-sub {
+  font-family: var(--font-ui);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gold);
+  font-size: 14px;
+}
+
+.hero-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 6px;
+  font-family: var(--font-ui);
+  letter-spacing: 0.04em;
+  font-size: 15px;
+}
+
+/* ---------------------------------------------------- Linha da temporada */
+.phase-step {
+  font-family: var(--font-ui);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: rgba(10, 20, 38, 0.85);
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 0 100%, 10px 50%);
+  border: none;
+  padding: 9px 14px;
+}
+
+.phase-step.done {
+  background: rgba(63, 191, 127, 0.14);
+}
+
+.phase-step.current {
+  background: linear-gradient(180deg, var(--gold), var(--gold-dark));
+  color: #010a13;
+}
+
+/* Alertas e avisos com ícone */
+.warn-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.event-badge,
+.badge {
+  border-radius: 0;
+  font-family: var(--font-ui);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.event-alert {
+  border-radius: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-ui);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.toast {
+  border-radius: 0;
+  border-color: var(--gold);
+  font-family: var(--font-ui);
+  letter-spacing: 0.04em;
+  font-size: 16px;
+}
+
+/* Destaque do Início com o escudo do time como marca d'água à direita */
+.home-hero-bg.logo-bg {
+  background-repeat: no-repeat;
+  background-size: auto 190%;
+  background-position: right -60px center;
+  opacity: 0.16;
+  filter: saturate(0.6);
+}
+
+.home-hero-bg.logo-bg::after {
+  display: none;
+}
+
+.home-hero {
+  background:
+    radial-gradient(ellipse 60% 120% at 85% 50%, rgba(123, 77, 255, 0.18), transparent 70%),
+    linear-gradient(90deg, #0a1428 0%, #0e1a2e 60%, #101d34 100%);
+}

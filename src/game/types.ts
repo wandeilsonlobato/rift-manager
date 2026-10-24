@@ -410,6 +410,8 @@ export interface GameState {
   /** draft manual nos jogos do coach */
   manualDraft?: boolean;
   tactic?: Tactic;
+  /** títulos do coach já comemorados (cerimônia mostrada) */
+  celebrated?: string[];
   /** pools de campeões já corrigidos para as rotas reais */
   poolsFixed?: boolean;
   /** estatísticas por jogador e temporada */

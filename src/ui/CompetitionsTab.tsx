@@ -5,6 +5,7 @@ import { myCompetition } from '../game/week';
 import { teamStrength } from '../game/world';
 import { Img, Rating } from './common';
 import { SeriesRow } from './MatchRow';
+import { Icon } from './Icon';
 
 interface Props {
   game: GameState;
@@ -37,7 +38,7 @@ export function CompetitionsTab({ game, onOpenSeries }: Props) {
                   onClick={() => setCompId(c.id)}
                 >
                   {c.name}
-                  {c.done && c.championId && <span className="muted small"> · 🏆 {game.teams[c.championId].code}</span>}
+                  {c.done && c.championId && <span className="muted small"> · <Icon name="trophy" size={14} /> {game.teams[c.championId].code}</span>}
                 </button>
               ))}
           </div>

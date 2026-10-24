@@ -6,6 +6,7 @@ import { COACH_STYLES } from '../game/coach';
 import type { CoachStyle, GameState } from '../game/types';
 import { academyName, createCareer, RAW_LEAGUES } from '../game/world';
 import { Flag, Img, Stars } from './common';
+import { Icon } from './Icon';
 
 interface Props {
   champions: Champion[];
@@ -120,7 +121,7 @@ export function NewCareer({ champions, onBack, onCreate }: Props) {
               </div>
               <div className="path-arrow">↓</div>
               <div className="path-step">
-                <span className="path-logo trophy">🏆</span>
+                <span className="path-logo trophy"><Icon name="trophy" size={20} /></span>
                 <div>
                   <strong>First Stand · MSI · Worlds</strong>
                   <span className="muted small">o topo do mundo</span>

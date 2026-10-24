@@ -1,0 +1,500 @@
+/* Celular e tablets. Este arquivo é importado por último (main.tsx):
+   assim nenhuma regra da base ou do tema sobrescreve os ajustes de tela pequena. */
+body {
+  overflow-x: hidden;
+}
+
+@media (max-width: 760px) {
+  /* Menu lateral vira uma barra no topo: logo + time + abas roláveis. */
+  .hub {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    padding: 0;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .brand {
+    padding: 8px 10px;
+    margin: 0;
+    border: none;
+  }
+
+  .brand img {
+    width: 34px;
+    height: 34px;
+  }
+
+  .brand span {
+    display: none;
+  }
+
+  .sidebar-team {
+    flex: 1;
+    min-width: 0;
+    padding: 8px 6px;
+    margin: 0;
+    border: none;
+  }
+
+  .sidebar-team strong {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .sidebar-team .team-logo {
+    width: 30px;
+    height: 30px;
+  }
+
+  .sidebar-footer {
+    margin: 0;
+    padding: 8px 10px;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .sidebar-footer .muted {
+    display: none;
+  }
+
+  .event-alert {
+    order: 4;
+    width: calc(100% - 20px);
+    margin: 0 10px 8px;
+  }
+
+  .sidebar nav {
+    order: 5;
+    width: 100%;
+    display: flex;
+    overflow-x: auto;
+    scrollbar-width: none;
+    border-top: 1px solid var(--border);
+  }
+
+  .sidebar nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .nav-item {
+    width: auto;
+    flex-shrink: 0;
+    white-space: nowrap;
+    border-left: none;
+    border-bottom: 3px solid transparent;
+    padding: 12px 14px;
+  }
+
+  .nav-item.active {
+    border-bottom-color: var(--gold);
+  }
+
+  .hub-main {
+    padding: 12px;
+  }
+}
+
+@media (max-width: 600px) {
+  /* Espaçamentos e tipografia */
+  .page {
+    padding: 12px;
+  }
+
+  .panel {
+    padding: 12px;
+    margin-bottom: 12px;
+  }
+
+  h2 {
+    font-size: 20px;
+  }
+
+  .stat strong {
+    font-size: 17px;
+  }
+
+  .stat-row {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  /* Campos com 16px: o iPhone não dá zoom ao tocar. */
+  input,
+  select {
+    font-size: 16px;
+  }
+
+  .filters input,
+  .filters select {
+    width: 100%;
+  }
+
+  table {
+    font-size: 12px;
+  }
+
+  th,
+  td {
+    padding: 6px;
+  }
+
+  .modal {
+    padding: 16px 12px;
+  }
+
+  .modal-backdrop {
+    padding: 12px 8px;
+  }
+
+  .toast {
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    text-align: center;
+  }
+
+  .btn.big {
+    width: 100%;
+  }
+
+  .week-actions {
+    width: 100%;
+  }
+
+  /* Linhas de partida (série) */
+  .match-row {
+    grid-template-columns: 1fr 64px 1fr 24px;
+    gap: 6px;
+    padding: 8px 6px;
+  }
+
+  .match-when {
+    display: none;
+  }
+
+  .match-team {
+    gap: 4px;
+    font-size: 13px;
+  }
+
+  .bracket {
+    grid-auto-columns: minmax(260px, 1fr);
+  }
+
+  /* Elenco, perfil e mercado */
+  .lineup {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+
+  .pm-photo {
+    width: 96px;
+  }
+
+  .nego-head {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .phase-step {
+    min-width: 80px;
+    font-size: 11px;
+  }
+
+  /* Partida ao vivo */
+  .live {
+    padding: 0;
+    gap: 8px;
+  }
+
+  .live-board {
+    padding: 8px;
+    gap: 6px;
+  }
+
+  .live-team {
+    font-size: 14px;
+    gap: 6px;
+  }
+
+  .live-team .team-logo {
+    width: 26px;
+    height: 26px;
+  }
+
+  .live-kills {
+    font-size: 26px;
+    min-width: 32px;
+  }
+
+  .live-clock strong {
+    font-size: 18px;
+  }
+
+  .live-stats {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    font-size: 12px;
+  }
+
+  .live-stats .gold-bar {
+    grid-column: 1 / -1;
+    order: 3;
+  }
+
+  .stat-icon {
+    width: 16px;
+    height: 16px;
+    margin-left: 4px;
+  }
+
+  .live-body {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .live-player {
+    grid-template-columns: 28px 1fr auto;
+    gap: 6px;
+    padding: 4px;
+    font-size: 12px;
+  }
+
+  .live-player img {
+    width: 28px;
+    height: 28px;
+  }
+
+  .live-player .muted {
+    display: none;
+  }
+
+  .live-highlight {
+    padding: 10px;
+    gap: 10px;
+  }
+
+  .live-highlight p {
+    font-size: 13px;
+  }
+
+  .live-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .live-list {
+    max-height: 36vh;
+  }
+
+  /* Draft: faixa de bans empilhada e cards menores */
+  .bc-top {
+    grid-template-columns: 1fr;
+  }
+
+  .bc-info {
+    order: -1;
+    padding: 8px;
+  }
+
+  .bc-banner,
+  .bc-banner.red {
+    align-items: flex-start;
+    padding: 6px 10px;
+  }
+
+  .bc-banner.red .bc-banner-head {
+    flex-direction: row;
+  }
+
+  .bc-team-name {
+    font-size: 14px;
+  }
+
+  .bc-ban {
+    width: 34px;
+    height: 34px;
+  }
+
+  .bc-picks {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+
+  .bc-side {
+    height: 180px;
+  }
+
+  .bc-center {
+    order: -1;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px;
+  }
+
+  .bc-logo {
+    width: 40px;
+    height: 40px;
+  }
+
+  .bc-codes strong {
+    font-size: 20px;
+  }
+
+  .pick-name {
+    font-size: 13px;
+    max-height: 120px;
+  }
+
+  .pick-role {
+    width: 16px;
+    height: 16px;
+  }
+
+  .pick-pool img {
+    width: 15px;
+    height: 15px;
+  }
+
+  .pick-top .rating {
+    font-size: 11px;
+    min-width: 24px;
+    padding: 1px 3px;
+  }
+
+  .pick-champ-name {
+    display: none;
+  }
+
+  .bc-bottom {
+    padding: 10px 10px 0;
+  }
+
+  .bc-controls input {
+    width: 100%;
+  }
+
+  .bc-lock {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .draft-screen.broadcast .champ-grid {
+    grid-template-columns: repeat(auto-fill, minmax(54px, 1fr));
+    max-height: 42vh;
+  }
+
+  .score-cols {
+    grid-template-columns: 1fr;
+  }
+
+
+  .draft-summary {
+    padding: 14px 10px;
+  }
+}
+
+/* Atributos coletivos */
+.collective-row {
+  grid-template-columns: 180px 1fr 34px;
+}
+
+.collective-row .attr-bar {
+  position: relative;
+  height: 10px;
+  overflow: visible;
+}
+
+.collective-row .attr-bar div {
+  border-radius: 4px;
+}
+
+.avg-mark {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  width: 2px;
+  background: var(--gold-2);
+  opacity: 0.8;
+}
+
+@media (max-width: 600px) {
+  .collective-row {
+    grid-template-columns: 120px 1fr 30px;
+    font-size: 12px;
+  }
+}
+
+/* Cenas no celular */
+@media (max-width: 760px) {
+  .card-row,
+  .ceremony-cards {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .card-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 10px;
+  }
+}
+
+@media (max-width: 600px) {
+  .nm-logo {
+    width: 64px;
+    height: 64px;
+  }
+
+  .nm-team strong {
+    font-size: 15px;
+  }
+
+  .nm-vs strong {
+    font-size: 28px;
+  }
+
+  .nm-head {
+    flex-wrap: wrap;
+    font-size: 11px;
+    padding: 8px 10px;
+  }
+
+  .splash-row {
+    grid-template-columns: 36px auto 36px;
+  }
+
+  .splash-row .muted {
+    grid-column: 1 / -1;
+  }
+
+  .splash-row .team-logo {
+    width: 34px;
+    height: 34px;
+  }
+
+  .pcard-ovr strong {
+    font-size: 24px;
+  }
+
+  .pcard-name {
+    font-size: 14px;
+  }
+
+  .pcard-attrs {
+    font-size: 12px;
+  }
+
+  .mail-body {
+    padding-left: 12px;
+  }
+}

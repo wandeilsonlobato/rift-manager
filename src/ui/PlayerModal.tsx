@@ -4,6 +4,7 @@ import { kda, totalStats } from '../game/stats';
 import { ATTR_LABEL, ROLE_LABEL, type Attributes, type GameState } from '../game/types';
 import { overall } from '../game/world';
 import { FormBadge, Img, money, Rating } from './common';
+import { Icon } from './Icon';
 
 /** Abre o perfil de um jogador a partir de qualquer tela. */
 export const PlayerLink = createContext<(id: string) => void>(() => {});
@@ -175,7 +176,7 @@ export function PlayerModal({ game, playerId, onClose }: Props) {
               <ul className="news">
                 {[...p.titles].reverse().map((t, i) => (
                   <li key={i}>
-                    🏆 {t.comp} ({t.season})
+                    <Icon name="trophy" size={14} /> {t.comp} ({t.season})
                   </li>
                 ))}
               </ul>

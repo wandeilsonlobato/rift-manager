@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import { championSplash } from '../game/ddragon';
 import logo from '../assets/logo-640.jpg';
 
 interface Props {
@@ -6,9 +8,14 @@ interface Props {
   onNew: () => void;
 }
 
+// Splash arts que se revezam no fundo da tela inicial.
+const SPLASHES = ['Aatrox', 'Ahri', 'Jinx', 'Thresh', 'LeeSin', 'Yasuo', 'Kaisa', 'Azir', 'Viego', 'Orianna'];
+
 export function TitleScreen({ hasSave, onContinue, onNew }: Props) {
+  const [splash] = useState(() => SPLASHES[Math.floor(Math.random() * SPLASHES.length)]);
   return (
     <div className="center-screen title-screen">
+      <div className="title-bg" style={{ backgroundImage: `url(${championSplash(splash)})` }} />
       <h1 className="title-logo-wrap">
         <img src={logo} alt="Rift Manager" className="title-logo" />
       </h1>

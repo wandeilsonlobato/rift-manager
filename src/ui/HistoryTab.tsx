@@ -5,6 +5,7 @@ import type { GameState } from '../game/types';
 import { overall } from '../game/world';
 import { Flag, Img, Rating } from './common';
 import { PlayerName } from './PlayerModal';
+import { Icon } from './Icon';
 
 const INTERNATIONAL = ['First Stand', 'Mid-Season Invitational', 'Esports World Cup', 'Worlds'];
 
@@ -51,7 +52,7 @@ export function HistoryTab({ game }: { game: GameState }) {
                   <td>{c.season}</td>
                   <td>{c.teamName}</td>
                   <td>{c.results.map((r) => `${r.rank}º`).join(' · ')}</td>
-                  <td>{c.titles.length ? `🏆 ${c.titles.join(', ')}` : '—'}</td>
+                  <td>{c.titles.length ? (<><Icon name="trophy" size={14} /> {c.titles.join(', ')}</>) : '—'}</td>
                 </tr>
               ))}
             </tbody>
@@ -121,7 +122,7 @@ export function HistoryTab({ game }: { game: GameState }) {
                   <td>
                     <Rating value={overall(p)} />
                   </td>
-                  <td>🏆 {p.titles!.length}</td>
+                  <td><Icon name="trophy" size={14} /> {p.titles!.length}</td>
                 </tr>
               ))}
             </tbody>

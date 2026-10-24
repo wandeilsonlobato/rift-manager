@@ -4,6 +4,7 @@ import { focusInfo, FOCUSES, INTENSITIES } from '../game/training';
 import { collectiveOf } from '../game/collective';
 import { ATTR_LABEL, COLLECTIVE_LABEL, type GameState, type GrowthEntry } from '../game/types';
 import { trainedFocus, trainThisWeek } from '../game/week';
+import { Icon, InfoTip } from './Icon';
 
 interface Props {
   game: GameState;
@@ -28,15 +29,17 @@ export function TrainingTab({ game, champions, onChange }: Props) {
 
   return (
     <>
-      <h2>Treino da semana</h2>
-      <p className="muted">
-        Escolha o foco das scrims e a intensidade e aperte <strong>Treinar</strong>. É um treino por semana: ele libera
-        de novo depois que a semana é jogada. O foco treinado também dá bônus nos jogos da semana.
-      </p>
+      <h2>
+        Treino da semana
+        <InfoTip>
+          Escolha o foco e a intensidade e aperte Treinar. É um treino por semana: libera de novo depois que a semana é
+          jogada. O foco treinado também dá bônus nos jogos da semana.
+        </InfoTip>
+      </h2>
 
       {trained && game.trainingResult && (
         <section className={`panel training-result ${justTrained ? 'fresh' : ''}`}>
-          <h3>✓ Treino concluído · {focusInfo(trained).label}</h3>
+          <h3>Treino concluído · {focusInfo(trained).label}</h3>
           <GrowthList game={game} growth={game.trainingResult.growth} />
           <p className="muted small">O próximo treino libera após os jogos desta semana.</p>
         </section>
@@ -52,8 +55,10 @@ export function TrainingTab({ game, champions, onChange }: Props) {
         { title: 'Treino coletivo', hint: 'O time evolui junto: rotações, lutas, visão, calls e draft.', list: FOCUSES.filter((f) => f.collective) },
       ].map((group) => (
       <section key={group.title} className={`panel ${locked ? 'locked' : ''}`}>
-        <h3>{group.title}</h3>
-        <p className="muted small">{group.hint}</p>
+        <h3>
+          {group.title}
+          <InfoTip>{group.hint}</InfoTip>
+        </h3>
         <div className="choice-grid">
           {group.list.map((f) => (
             <button
@@ -105,7 +110,7 @@ export function TrainingTab({ game, champions, onChange }: Props) {
       {!locked && (
         <div className="train-action">
           <button className="btn primary big" onClick={train}>
-            Treinar: {focusInfo(focus).label} ▶
+            Treinar: {focusInfo(focus).label} <Icon name="play" />
           </button>
         </div>
       )}

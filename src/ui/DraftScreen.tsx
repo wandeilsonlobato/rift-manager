@@ -17,6 +17,7 @@ import { playDraftedGame } from '../game/week';
 import { overall, starters } from '../game/world';
 import { Img, Rating } from './common';
 import { LiveMatch } from './LiveMatch';
+import { Icon } from './Icon';
 
 interface Props {
   game: GameState;
@@ -203,7 +204,7 @@ export function DraftScreen({ game, seriesId, champions, onGamePlayed, onFinish 
         <div className="bc-center">
           <div className="bc-sides">
             <span>BLUE SIDE</span>
-            <span className="bc-arrow">{done ? '•' : step.side === 'blue' ? '◀' : '▶'}</span>
+            <span className="bc-arrow">{done ? <Icon name="check" /> : <Icon name={step.side === 'blue' ? 'back' : 'next'} />}</span>
             <span>2ND PICK</span>
           </div>
           <div className="bc-logos">
@@ -247,7 +248,7 @@ export function DraftScreen({ game, seriesId, champions, onGamePlayed, onFinish 
                   <strong>Total {fmt(scores[side].total)}</strong>
                   {scores[side].notes.map((n) => (
                     <span key={n} className="muted small">
-                      ⚠ {n}
+                      <Icon name="warning" size={13} /> {n}
                     </span>
                   ))}
                 </div>
@@ -264,7 +265,7 @@ export function DraftScreen({ game, seriesId, champions, onGamePlayed, onFinish 
               </select>
             </label>
             <button className="btn primary big" onClick={play}>
-              Jogar partida ▶
+              Jogar partida <Icon name="play" />
             </button>
           </div>
         ) : (
@@ -285,7 +286,7 @@ export function DraftScreen({ game, seriesId, champions, onGamePlayed, onFinish 
                 {step?.type === 'ban' ? 'Banir' : 'Travar'} {selected ? champName(selected) : ''}
               </button>
               <button className="btn small" onClick={autoDraft}>
-                Draft automático ⏭
+                Draft automático <Icon name="skip" size={15} />
               </button>
             </div>
             <div className="legend muted small">
@@ -349,7 +350,7 @@ function PickCard({ player, side, champion, preview, active, enemyTurn, taken, c
         <Rating value={overall(player)} />
         {champion && (
           <span className={`pick-comfort ${player.champions.includes(champion) ? 'up' : 'down'}`}>
-            {player.champions.includes(champion) ? '✓' : '✗'}
+            <Icon name={player.champions.includes(champion) ? 'check' : 'cross'} size={16} />
           </span>
         )}
       </div>
@@ -385,7 +386,7 @@ function GameResult({ game, match, seriesId, onNext, onFinish }: ResultProps) {
   const mvp = d && game.players[d.mvp];
   return (
     <div className="draft-summary">
-      <h2 className={won ? 'up' : 'down'}>{won ? 'VITÓRIA!' : 'DERROTA'}</h2>
+      <h1 className={`splash-title ${won ? 'victory' : 'defeat'}`}>{won ? 'Vitória' : 'Derrota'}</h1>
       <p>
         {game.teams[match.blue].code} {match.kills[0]} × {match.kills[1]} {game.teams[match.red].code}
         {d && ` · ${Math.floor(d.duration)} min`}
@@ -409,7 +410,7 @@ function GameResult({ game, match, seriesId, onNext, onFinish }: ResultProps) {
         </button>
       ) : (
         <button className="btn primary big" onClick={onNext}>
-          Próximo jogo ▶
+          Próximo jogo <Icon name="next" />
         </button>
       )}
     </div>

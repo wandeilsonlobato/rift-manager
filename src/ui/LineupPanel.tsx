@@ -2,6 +2,7 @@ import { tacticMetaBonus, TACTICS } from '../game/coach';
 import { ROLE_LABEL, ROLES, type GameState, type Role, type Tactic } from '../game/types';
 import { overall, starters } from '../game/world';
 import { FormBadge, Img, Rating } from './common';
+import { InfoTip } from './Icon';
 
 interface Props {
   game: GameState;
@@ -25,15 +26,15 @@ export function LineupPanel({ game, onChange, onOpenPlayer }: Props) {
     <>
       <section className="panel">
         <div className="panel-head">
-          <h3>Escalação</h3>
+          <h3>
+            Escalação
+            <InfoTip>Escolha o titular de cada rota. Considere forma, moral e doença na hora de escolher.</InfoTip>
+          </h3>
           <button className="btn small" disabled={!manual} onClick={() => setTeam({ lineup: undefined })}>
             Escalação automática (maior OVR)
           </button>
         </div>
-        <p className="muted small">
-          {manual ? 'Escalação definida por você.' : 'Automática: joga quem tem o maior OVR em cada rota.'} Considere
-          forma, moral e doença na hora de escolher.
-        </p>
+        <p className="muted small">{manual ? 'Escalação definida por você.' : 'Escalação automática (maior OVR).'}</p>
         <div className="lineup-grid">
           {ROLES.map((role) => {
             const starter = lineup.find((p) => p.role === role);
@@ -74,10 +75,10 @@ export function LineupPanel({ game, onChange, onOpenPlayer }: Props) {
       </section>
 
       <section className="panel">
-        <h3>Tática de jogo</h3>
-        <p className="muted small">
-          Vale para todas as partidas do time. Combinar a tática com o estilo do patch atual dá um bônus extra.
-        </p>
+        <h3>
+          Tática de jogo
+          <InfoTip>Vale para todas as partidas do time. Combinar a tática com o estilo do patch atual dá um bônus extra.</InfoTip>
+        </h3>
         <div className="choice-grid">
           {(Object.keys(TACTICS) as Tactic[]).map((t) => {
             const info = TACTICS[t];

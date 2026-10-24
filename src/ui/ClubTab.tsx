@@ -3,6 +3,7 @@ import { payroll } from '../game/market';
 import { fireStaff, hireStaff, STAFF_INFO, staffPayroll } from '../game/staff';
 import type { GameState, StaffRole } from '../game/types';
 import { money } from './common';
+import { InfoTip } from './Icon';
 
 interface Props {
   game: GameState;
@@ -50,11 +51,10 @@ export function ClubTab({ game, onChange }: Props) {
       </div>
 
       <section className="panel">
-        <h3>Staff</h3>
-        <p className="muted small">
-          Um profissional por função. O salário sai do caixa ({money(staffPayroll(game))}/mês hoje). Demitir custa um mês
-          de salário.
-        </p>
+        <h3>
+          Staff · {money(staffPayroll(game))}/mês
+          <InfoTip>Um profissional por função. O salário sai do caixa. Demitir custa um mês de salário.</InfoTip>
+        </h3>
         <div className="staff-grid">
           {roles.map((role) => {
             const current = game.staff?.find((s) => s.role === role);

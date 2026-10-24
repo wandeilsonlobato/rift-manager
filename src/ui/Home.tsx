@@ -1,23 +1,26 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { COACH_STYLES, coachStyle, TACTICS } from '../game/coach';
 import { countryByCode } from '../game/countries';
 import { championIcon, type Champion } from '../game/ddragon';
+import { payroll } from '../game/market';
+import { STYLE_LABEL } from '../game/meta';
 import { currentCompetitions, phaseLabel, PHASES, stageStandings } from '../game/season';
 import { focusInfo } from '../game/training';
-import { ROLE_LABEL, type GameState, type Series } from '../game/types';
+import type { GameState, Series } from '../game/types';
 import { advanceToNextMatch, advanceWeek, myCompetition, mySeriesThisWeek, trainedFocus } from '../game/week';
-import { overall, starters, teamStrength } from '../game/world';
-import { payroll } from '../game/market';
-import { Img, money, Rating } from './common';
-import { News, Offseason } from './Offseason';
-import type { Tab } from './Hub';
+import { starters, teamStrength } from '../game/world';
+import { Flag, Img, money, Rating } from './common';
 import { DraftScreen } from './DraftScreen';
-import { PlayerName } from './PlayerModal';
-import { GrowthList } from './TrainingTab';
 import { EventCard } from './EventCard';
-import { Flag, FormBadge } from './common';
-import { STYLE_LABEL } from '../game/meta';
-import { COACH_STYLES, coachStyle, TACTICS } from '../game/coach';
+import type { Tab } from './Hub';
+import { Icon } from './Icon';
+import { Inbox } from './Inbox';
 import { SeriesRow } from './MatchRow';
+import { NextMatchCard } from './NextMatchCard';
+import { Offseason } from './Offseason';
+import { PlayerCard } from './PlayerCard';
+import { ResultSplash } from './ResultSplash';
+import { GrowthList } from './TrainingTab';
 
 interface Props {
   game: GameState;
@@ -42,7 +45,7 @@ export function Home({ game, champions, onChange, onOpenSeries, onTab }: Props) 
   let status = '';
   if (comp) {
     const st = comp.stages[comp.stageIndex];
-    if (comp.done) status = comp.championId === team.id ? 'Campeão! 🏆' : `Terminou em ${comp.ranking!.indexOf(team.id) + 1}º`;
+    if (comp.done) status = comp.championId === team.id ? 'Campeão!' : `Terminou em ${comp.ranking!.indexOf(team.id) + 1}º`;
     else if (st.kind === 'rr1' || st.kind === 'rr2' || st.kind === 'swiss') {
       const table = stageStandings(game, st);
       const pos = table.findIndex((r) => r.teamId === team.id);
@@ -92,6 +95,17 @@ export function Home({ game, champions, onChange, onOpenSeries, onTab }: Props) 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resume, game]);
 
+  // Tela de vitória/derrota quando uma semana com jogos do seu time termina.
+  const shownWeek = useRef(game.lastReport?.week ?? 0);
+  const [splash, setSplash] = useState<Series[] | null>(null);
+  useEffect(() => {
+    const r = game.lastReport;
+    if (!r || r.week === shownWeek.current) return;
+    shownWeek.current = r.week;
+    const played = r.seriesIds.map((id) => game.series[id]).filter((s) => s?.winner);
+    if (played.length) setSplash(played);
+  }, [game.lastReport, game.series]);
+
   const otherEvents = currentCompetitions(game).filter((c) => c.kind === 'international' && c !== comp);
   const myLeague = game.leagues[team.leagueSlug];
   const regional = new Set([myLeague.slug, myLeague.parentSlug, myLeague.academySlug]);
@@ -101,6 +115,7 @@ export function Home({ game, champions, onChange, onOpenSeries, onTab }: Props) 
 
   return (
     <>
+      {splash && <ResultSplash game={game} series={splash} onClose={() => setSplash(null)} />}
       {draftId && (
         <DraftScreen
           game={game}
@@ -113,6 +128,26 @@ export function Home({ game, champions, onChange, onOpenSeries, onTab }: Props) 
           }}
         />
       )}
+      <section className="home-hero">
+        <div className="home-hero-bg logo-bg" style={{ backgroundImage: `url(${team.image.replace(/^http:/, 'https:')})` }} />
+        <div className="home-hero-content">
+          <Img src={team.image} alt={team.code} className="team-logo" />
+          <div>
+            <span className="hero-sub">
+              {myLeague.name} · {phaseLabel(game.phase)} · Semana {game.week}
+            </span>
+            <h1>{team.name}</h1>
+            <div className="hero-meta">
+              <span>Coach {coach.name}</span>
+              <span>
+                Força <Rating value={teamStrength(game, team.id)} />
+              </span>
+              {comp && <span className="up">{status}</span>}
+            </div>
+          </div>
+        </div>
+      </section>
+
       <div className="phase-track">
         {PHASES.map((p, i) => (
           <span key={p.id} className={`phase-step ${i < phaseIdx ? 'done' : i === phaseIdx ? 'current' : ''}`}>
@@ -158,7 +193,7 @@ export function Home({ game, champions, onChange, onOpenSeries, onTab }: Props) 
       </div>
 
       {game.phase === 'offseason' && <Offseason game={game} champions={champions} onChange={onChange} onTab={onTab} />}
-      {game.phase !== 'offseason' && game.week <= 2 && game.news.length > 0 && <News news={game.news} />}
+      {game.phase !== 'offseason' && <NextMatchCard game={game} />}
 
       {game.phase !== 'offseason' && (
         <section className="panel week-panel">
@@ -166,9 +201,7 @@ export function Home({ game, champions, onChange, onOpenSeries, onTab }: Props) 
               <h3>
                 Semana {game.week} · {phaseLabel(game.phase)}
               </h3>
-              {upcoming.length ? (
-                upcoming.map((s) => <SeriesRow key={s.id} game={game} series={s} teamId={team.id} />)
-              ) : (
+              {!upcoming.length && (
                 <p className="muted">
                   {comp
                     ? 'Sem jogos do seu time nesta semana.'
@@ -176,10 +209,10 @@ export function Home({ game, champions, onChange, onOpenSeries, onTab }: Props) 
                 </p>
               )}
               {trained ? (
-                <p className="up small">✓ Treino da semana concluído: {focusInfo(trained).label}</p>
+                <p className="up small warn-line"><Icon name="check" size={15} /> Treino da semana concluído: {focusInfo(trained).label}</p>
               ) : (
-                <p className="down small">
-                  ⚠ Você ainda não treinou nesta semana.{' '}
+                <p className="down small warn-line">
+                  <Icon name="warning" size={15} /> Você ainda não treinou nesta semana.{' '}
                   <button className="link" onClick={() => onTab('training')}>
                     Ir para o treino
                   </button>
@@ -188,7 +221,8 @@ export function Home({ game, champions, onChange, onOpenSeries, onTab }: Props) 
             </div>
             <div className="week-actions">
               <button className="btn primary big" disabled={busy || !!game.pendingEvent} onClick={advance}>
-                {busy ? 'Simulando…' : manualDraft && pending.length ? 'Ir para o draft ▶' : 'Avançar semana ▶'}
+                {busy ? 'Simulando…' : manualDraft && pending.length ? 'Ir para o draft' : 'Avançar semana'}
+                {!busy && <Icon name="play" />}
               </button>
               <label className="inline small">
                 <input
@@ -200,7 +234,7 @@ export function Home({ game, champions, onChange, onOpenSeries, onTab }: Props) 
               </label>
               {!upcoming.length && (
                 <button className="btn small" disabled={busy || !!game.pendingEvent} onClick={() => okWithoutTraining() && act(advanceToNextMatch)}>
-                  Avançar até meu próximo jogo ⏭
+                  Avançar até meu próximo jogo <Icon name="skip" size={14} />
                 </button>
               )}
             </div>
@@ -209,16 +243,7 @@ export function Home({ game, champions, onChange, onOpenSeries, onTab }: Props) 
 
       {game.phase !== 'offseason' && game.meta && <PatchPanel game={game} />}
 
-      {(game.eventLog ?? []).length > 0 && game.phase !== 'offseason' && (
-        <section className="panel">
-          <h3>Bastidores</h3>
-          <ul className="news">
-            {game.eventLog!.slice(0, 5).map((e, i) => (
-              <li key={i}>{e}</li>
-            ))}
-          </ul>
-        </section>
-      )}
+      {game.phase !== 'offseason' && <Inbox game={game} onTab={onTab} />}
 
       {report && game.phase !== 'offseason' && (
         <section className="panel">
@@ -268,19 +293,9 @@ export function Home({ game, champions, onChange, onOpenSeries, onTab }: Props) 
 
       <section className="panel">
         <h3>Titulares</h3>
-        <div className="lineup">
+        <div className="card-row">
           {lineup.map((p) => (
-            <div key={p.id} className="lineup-card">
-              <Img src={p.image} alt={p.nick} className="player-photo" />
-              <span className="role-tag">{ROLE_LABEL[p.role]}</span>
-              <PlayerName id={p.id} nick={p.nick} />
-              <span>
-                <Rating value={overall(p)} /> <FormBadge form={p.form ?? 0} />
-              </span>
-              <div className="bar" title={`Moral ${p.morale}`}>
-                <div style={{ width: `${p.morale}%` }} />
-              </div>
-            </div>
+            <PlayerCard key={p.id} game={game} player={p} compact />
           ))}
         </div>
       </section>

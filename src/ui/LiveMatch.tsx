@@ -3,6 +3,7 @@ import { championIcon } from '../game/ddragon';
 import type { Game, GameState, MatchSnapshot, PlayerLine } from '../game/types';
 import { Img } from './common';
 import { EventIcon, StatIcon } from './icons';
+import { Icon } from './Icon';
 
 interface Props {
   game: GameState;
@@ -179,13 +180,13 @@ export function LiveMatch({ game, match, onEnd }: Props) {
               {game.teams[match.winner].name} vence!
             </strong>
             <button className="btn primary big" onClick={onEnd}>
-              Continuar ▶
+              Continuar <Icon name="next" />
             </button>
           </>
         ) : (
           <>
             <button className="btn" onClick={() => setPlaying(!playing)}>
-              {playing ? '⏸ Pausar' : '▶ Continuar'}
+              <Icon name={playing ? 'pause' : 'play'} /> {playing ? 'Pausar' : 'Continuar'}
             </button>
             {[1, 2, 4].map((s) => (
               <button key={s} className={`btn small ${speed === s ? 'primary' : ''}`} onClick={() => setSpeed(s)}>
@@ -193,7 +194,7 @@ export function LiveMatch({ game, match, onEnd }: Props) {
               </button>
             ))}
             <button className="btn small" onClick={() => setT(d.duration)}>
-              Pular para o fim ⏭
+              Pular para o fim <Icon name="skip" size={14} />
             </button>
           </>
         )}
