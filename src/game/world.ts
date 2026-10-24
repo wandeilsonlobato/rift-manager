@@ -385,14 +385,22 @@ export function makeProposal(state: GameState, teamId: string, rng: Rng): Propos
   };
 }
 
-/** Coaches iniciantes recebem propostas dos times mais fracos da liga. */
+/**
+ * Propostas para um coach iniciante: de 2 a 4 times sorteados entre todos os da liga.
+ * Os mais fracos têm mais chance (peso cresce com a posição no ranking de força), mas qualquer um pode chamar.
+ */
 export function generateProposals(state: GameState, leagueSlug: string, rng: Rng): Proposal[] {
   const league = state.leagues[leagueSlug];
   const ranked = [...league.teamIds].sort((a, b) => teamStrength(state, b) - teamStrength(state, a));
-  const lowerHalf = ranked.slice(Math.floor(ranked.length / 2) - 1);
-  return shuffle(rng, lowerHalf)
-    .slice(0, 3)
-    .map((teamId) => makeProposal(state, teamId, rng));
+  const pool = ranked.map((teamId, i) => ({ teamId, weight: (i + 1) ** 1.3 }));
+  const chosen: string[] = [];
+  const count = Math.min(randInt(rng, 2, 4), pool.length);
+  while (chosen.length < count) {
+    let r = rng() * pool.reduce((sum, t) => sum + t.weight, 0);
+    const idx = pool.findIndex((t) => (r -= t.weight) <= 0);
+    chosen.push(pool.splice(idx < 0 ? pool.length - 1 : idx, 1)[0].teamId);
+  }
+  return chosen.map((teamId) => makeProposal(state, teamId, rng));
 }
 
 /** O coach escolhe a liga principal, mas começa a carreira na academy dela. */
