@@ -49,12 +49,14 @@ function skipPhasesWithoutMe(state: GameState, champions: Champion[] | null) {
   const myTeam = state.coach.teamId!;
   for (let guard = 0; guard < 6 && state.phase !== 'offseason'; guard++) {
     const comps = currentCompetitions(state);
-    const international = comps.length > 0 && comps.every((c) => c.kind === 'international');
-    if (!international || competitionOf(state, myTeam)) return;
+    const outsideLeagues = comps.length > 0 && comps.every((c) => c.kind !== 'league');
+    // Só pula quando tudo o que o coach disputa na fase já acabou (ou ele não disputa nada).
+    const mine = comps.filter((c) => c.stages.some((st) => st.teamIds.includes(myTeam)));
+    if (!outsideLeagues || mine.some((c) => !c.done)) return;
     const phase = state.phase;
     for (let week = 0; week < 20 && state.phase === phase; week++) playOneWeek(state, champions);
     for (const c of comps) {
-      if (c.championId) {
+      if (c.championId && !mine.includes(c)) {
         state.skipped = [...(state.skipped ?? []), { phase, compName: c.name, championId: c.championId }];
       }
     }

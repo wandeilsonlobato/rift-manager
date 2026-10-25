@@ -158,6 +158,12 @@ class WorldBuilder {
       team.budget = Math.round(payroll * 1.25) + 5;
       team.cash = team.budget * 6;
     }
+    // CBLOL 2026: a vaga de convidado (LØS) é a disputada no torneio de promoção.
+    const cblol = this.leagues['cblol-brazil'];
+    if (cblol) {
+      cblol.guestTeamId =
+        cblol.teamIds.find((id) => this.teams[id].code === 'LOS') ?? cblol.teamIds[cblol.teamIds.length - 1];
+    }
     return { leagues: this.leagues, teams: this.teams, players: this.players };
   }
 

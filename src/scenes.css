@@ -540,3 +540,25 @@
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
+
+/* Resultado do Torneio de Promoção no fim de temporada */
+.promotion-winner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.promotion-winner div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.promotion-winner strong {
+  font-family: var(--font-title);
+  font-size: 22px;
+}
+
+.promotion-result.mine {
+  box-shadow: 0 0 0 1px var(--gold), 0 0 30px rgba(200, 170, 110, 0.25);
+}

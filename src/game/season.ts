@@ -252,6 +252,7 @@ function createPhase(state: GameState, phase: PhaseId): Competition[] {
           stage('swiss', 'Fase suíça', 1, directTeams, 1),
           stage('knockout', 'Mata-mata', 5, [], 8),
         ]),
+        ...promotionTournament(state, phase),
       ];
     }
     case 'offseason':
@@ -275,6 +276,49 @@ export function renameCompetitions(state: GameState): GameState {
     t.season === state.season && renamed.has(t.compName) ? { ...t, compName: renamed.get(t.compName)! } : t,
   );
   return { ...state, competitions, titles };
+}
+
+export const PROMOTION_SLUGS = { main: 'cblol-brazil', tier2: 'cd', regional: 'south_regional_league' };
+
+/** Time convidado do CBLOL (saves antigos: a LØS, ou o último colocado do Split 3). */
+export function cblolGuest(state: GameState): string | undefined {
+  const cblol = state.leagues[PROMOTION_SLUGS.main];
+  if (!cblol) return undefined;
+  return (
+    cblol.guestTeamId ??
+    cblol.teamIds.find((id) => state.teams[id].code === 'LOS') ??
+    leagueRanking(state, 'split3', PROMOTION_SLUGS.main).at(-1) ??
+    cblol.teamIds[cblol.teamIds.length - 1]
+  );
+}
+
+/**
+ * Torneio de Promoção do CBLOL (como em 2026): o convidado defende a vaga contra os 2 melhores times
+ * não-academy do Circuito Desafiante e o campeão e o vice da LRS. Pontos corridos em MD3 e final em MD5.
+ */
+function promotionTournament(state: GameState, phase: PhaseId): Competition[] {
+  const cblol = state.leagues[PROMOTION_SLUGS.main];
+  const guest = cblolGuest(state);
+  if (!cblol || !guest || !state.leagues[PROMOTION_SLUGS.tier2]) return [];
+  // Academies de organizações do CBLOL não disputam o acesso.
+  const challengers = leagueRanking(state, 'split3', PROMOTION_SLUGS.tier2).filter((id) => !state.teams[id].parentTeamId);
+  const regional = leagueRanking(state, 'split3', PROMOTION_SLUGS.regional).slice(0, 2);
+  const teams = [guest, ...challengers.slice(0, 2), ...regional];
+  for (const id of challengers.slice(2)) if (teams.length < 5) teams.push(id);
+  if (teams.length < 3) return [];
+  return [
+    {
+      id: `${state.season}-promotion-cblol`,
+      name: `Torneio de Promoção do CBLOL ${state.season + 1}`,
+      phase,
+      kind: 'promotion',
+      leagueSlug: PROMOTION_SLUGS.main,
+      image: cblol.image,
+      stages: [stage('rr1', 'Fase de pontos', 3, teams), stage('knockout', 'Final', 5, [], 2)],
+      stageIndex: 0,
+      done: false,
+    },
+  ];
 }
 
 /** Abre uma fase da temporada: cria as competições e as primeiras rodadas. */

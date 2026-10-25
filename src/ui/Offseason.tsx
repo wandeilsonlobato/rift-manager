@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { Champion } from '../game/ddragon';
 import { startBlockers, startNewSeason } from '../game/market';
+import { cblolGuest } from '../game/season';
 import type { GameState } from '../game/types';
 import { acceptProposal, teamStrength } from '../game/world';
 import { Img, money, Rating } from './common';
@@ -19,6 +20,8 @@ export function Offseason({ game, champions, onChange, onTab }: Props) {
   const review = game.review;
   const blockers = startBlockers(game);
   const myTeam = game.coach.teamId!;
+  const promotion = game.competitions.find((c) => c.id === `${game.season}-promotion-cblol`);
+  const guest = cblolGuest(game);
 
   const start = () => {
     setBusy(true);
@@ -50,6 +53,25 @@ export function Offseason({ game, champions, onChange, onTab }: Props) {
             </div>
           </div>
           {review.titles.length > 0 && <p className="warn-line"><Icon name="trophy" /> Títulos: {review.titles.join(', ')}</p>}
+        </section>
+      )}
+
+      {promotion?.championId && (
+        <section className={`panel promotion-result ${promotion.championId === myTeam ? 'mine' : ''}`}>
+          <h3>{promotion.name}</h3>
+          <div className="promotion-winner">
+            <Img src={game.teams[promotion.championId].image} alt="" className="team-logo big" />
+            <div>
+              <strong>{game.teams[promotion.championId].name}</strong>
+              <span className="muted">
+                {promotion.championId === guest
+                  ? 'defendeu a vaga e segue no CBLOL'
+                  : promotion.championId === myTeam
+                    ? 'Seu time conquistou o acesso: na próxima temporada vocês jogam o CBLOL!'
+                    : `conquistou o acesso; ${game.teams[guest ?? '']?.name ?? 'o convidado'} cai para o Circuito Desafiante`}
+              </span>
+            </div>
+          </div>
         </section>
       )}
 

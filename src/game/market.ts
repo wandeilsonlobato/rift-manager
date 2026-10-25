@@ -2,7 +2,7 @@ import { clamp, createRng, gauss, pick, randInt, shuffle, type Rng } from './ran
 import { newcomerPenalty } from './collective';
 import type { Champion } from './ddragon';
 import { newPatch } from './meta';
-import { enterPhase } from './season';
+import { cblolGuest, enterPhase, leagueRanking, PROMOTION_SLUGS } from './season';
 import { generateStaffMarket } from './staff';
 import { recordSeasonHistory } from './stats';
 import { ROLE_LABEL, ROLES, type GameState, type Player, type Proposal, type Role, type SplitResult } from './types';
@@ -428,12 +428,59 @@ function aiMarket(state: GameState, rng: Rng) {
   }
 }
 
+/** Muda um time de liga (acesso ou queda). */
+function moveTeamToLeague(state: GameState, teamId: string, slug: string) {
+  const team = state.teams[teamId];
+  const old = state.leagues[team.leagueSlug];
+  old.teamIds = old.teamIds.filter((id) => id !== teamId);
+  state.leagues[slug].teamIds.push(teamId);
+  team.leagueSlug = slug;
+}
+
+/**
+ * Resultado do Torneio de Promoção do CBLOL: o vencedor vira o novo convidado do CBLOL.
+ * O convidado que perdeu desce para o Circuito Desafiante; se o acesso veio da LRS, o pior
+ * time não-academy do Circuito vai para a LRS (os tamanhos das ligas não mudam).
+ */
+function applyPromotion(state: GameState) {
+  const comp = state.competitions.find((c) => c.id === `${state.season}-promotion-cblol`);
+  const cblol = state.leagues[PROMOTION_SLUGS.main];
+  const guest = cblolGuest(state);
+  if (!comp?.championId || !cblol || !guest) return;
+  const winner = comp.championId;
+  if (winner === guest) {
+    state.news.push(`${state.teams[winner].name} defende a vaga e segue no CBLOL.`);
+    return;
+  }
+  const from = state.teams[winner].leagueSlug;
+  if (from === PROMOTION_SLUGS.regional) {
+    const worst = leagueRanking(state, 'split3', PROMOTION_SLUGS.tier2)
+      .filter((id) => !state.teams[id].parentTeamId && state.teams[id].leagueSlug === PROMOTION_SLUGS.tier2)
+      .at(-1);
+    if (worst) {
+      moveTeamToLeague(state, worst, PROMOTION_SLUGS.regional);
+      state.news.push(`${state.teams[worst].name} cai do Circuito Desafiante para a LRS.`);
+    }
+  }
+  moveTeamToLeague(state, winner, PROMOTION_SLUGS.main);
+  moveTeamToLeague(state, guest, PROMOTION_SLUGS.tier2);
+  cblol.guestTeamId = winner;
+  // Subir traz patrocínio novo; cair corta o orçamento.
+  state.teams[winner].budget = Math.round(state.teams[winner].budget * 1.5);
+  state.teams[guest].budget = Math.round(state.teams[guest].budget * 0.75);
+  state.news.unshift(
+    `${state.teams[winner].name} vence o Torneio de Promoção e sobe para o CBLOL!`,
+    `${state.teams[guest].name} perde a vaga de convidado e cai para o Circuito Desafiante.`,
+  );
+}
+
 /** Fecha o mercado e começa a próxima temporada. */
 export function startNewSeason(prev: GameState, champions: Champion[]): GameState {
   const state = structuredClone(prev);
   const rng = createRng(`season-${state.season}-${Date.now()}`);
   const myTeam = state.coach.teamId!;
   state.news = [];
+  applyPromotion(state);
 
   // Contratos não renovados viram agentes livres.
   for (const id of [...state.teams[myTeam].playerIds]) {

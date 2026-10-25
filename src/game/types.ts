@@ -100,6 +100,8 @@ export interface League {
   tier: 1 | 2;
   parentSlug?: string;
   academySlug?: string;
+  /** time convidado, cuja vaga é disputada no torneio de promoção (CBLOL) */
+  guestTeamId?: string;
   teamIds: string[];
 }
 
@@ -312,7 +314,8 @@ export interface Competition {
   id: string;
   name: string;
   phase: PhaseId;
-  kind: 'league' | 'international';
+  /** promotion = torneio de acesso à liga principal (ex.: promoção do CBLOL) */
+  kind: 'league' | 'international' | 'promotion';
   leagueSlug?: string;
   image: string;
   stages: Stage[];

@@ -16,7 +16,8 @@ export function HistoryTab({ game }: { game: GameState }) {
   const myLeague = game.leagues[game.teams[coach.teamId!].leagueSlug];
   const regionLeagues = Object.values(game.leagues).filter((l) => l.region === myLeague.region);
   // Nomes de competição da região (copas e splits das ligas da região).
-  const regionNames = (name: string) => regionLeagues.some((l) => name.startsWith(l.name)) || name.startsWith('Copa');
+  const regionNames = (name: string) =>
+    regionLeagues.some((l) => name.startsWith(l.name) || name.includes(`do ${l.name} `)) || name.startsWith('Copa');
 
   const titles = game.titles.filter((t) => scope === 'all' || INTERNATIONAL.includes(t.compName) || regionNames(t.compName));
   const seasons = [...new Set(titles.map((t) => t.season))].sort((a, b) => b - a);
