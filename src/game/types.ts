@@ -51,6 +51,8 @@ export interface Player {
   form?: number;
   /** semanas restantes de doença/indisposição */
   sick?: number;
+  /** temporada do último aumento concedido (um pedido por temporada) */
+  lastRaise?: number;
   /** OVR e time ao fim de cada temporada */
   history?: { season: number; ovr: number; team: string }[];
   /** títulos conquistados como titular */
@@ -360,6 +362,8 @@ export interface EventOption {
 
 export interface GameEvent {
   type: string;
+  /** time interessado (proposta por um jogador) */
+  rivalId?: string;
   title: string;
   text: string;
   playerIds: string[];
@@ -437,6 +441,8 @@ export interface GameState {
   staffMarket?: Staff[];
   finances?: FinanceEntry[];
   pendingEvent?: GameEvent | null;
+  /** tipos dos últimos eventos, para não repetir o mesmo em seguida */
+  recentEvents?: string[];
   eventLog?: string[];
   /** notícias do mercado e da virada de temporada */
   news: string[];

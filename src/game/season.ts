@@ -227,7 +227,8 @@ function createPhase(state: GameState, phase: PhaseId): Competition[] {
       const playinRegions = ['lec', 'lcs', 'lcp', 'cblol-brazil'];
       const order = ['lck', 'lpl', 'lec', 'lcs', 'lcp', 'cblol-brazil'];
       const direct: [string, number][] = [];
-      for (let pos = 1; pos <= 4; pos++) {
+      const maxSlots = Math.max(...Object.values(slots));
+      for (let pos = 1; pos <= maxSlots; pos++) {
         for (const region of order) {
           const isPlayin = playinRegions.includes(region) && pos === slots[region];
           if (pos <= slots[region] && !isPlayin) direct.push([region, pos]);
@@ -590,6 +591,7 @@ function stageResult(state: GameState, st: Stage): string[] {
     case 'double': {
       // Campeão primeiro; os outros pela rodada em que foram eliminados (mais tarde = melhor).
       const rounds = st.rounds.map((ids) => seriesOf(state, ids));
+      if (!rounds.length) return [...st.teamIds];
       const champion = rounds[rounds.length - 1][0].winner!;
       const losses = new Map<string, number>();
       const eliminated = new Map<string, number>();
@@ -623,7 +625,7 @@ function prepare(state: GameState, comp: Competition) {
     const st = comp.stages[comp.stageIndex];
     if (st.played < st.rounds.length) return;
     const next = nextRound(state, comp, comp.stageIndex);
-    if (next) {
+    if (next?.length) {
       st.rounds.push(next);
       return;
     }
