@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { loadChampions, type Champion } from './game/ddragon';
 import { loadGame, saveGame } from './game/save';
 import type { GameState } from './game/types';
@@ -28,9 +28,23 @@ export default function App() {
     });
   }, []);
 
+  const latest = useRef<GameState | null>(null);
+  // Grava no navegador um instante depois da última mudança (várias mudanças seguidas = uma gravação).
   useEffect(() => {
-    if (game) saveGame(game);
+    if (!game) return;
+    latest.current = game;
+    const t = setTimeout(() => saveGame(game), 600);
+    return () => clearTimeout(t);
   }, [game]);
+
+  // Ao fechar ou trocar de aba, salva na hora sem esperar o intervalo.
+  useEffect(() => {
+    const flush = () => {
+      if (document.visibilityState === 'hidden' && latest.current) saveGame(latest.current);
+    };
+    document.addEventListener('visibilitychange', flush);
+    return () => document.removeEventListener('visibilitychange', flush);
+  }, []);
 
   // Corrige pools de campeões de saves antigos assim que os campeões carregam.
   useEffect(() => {

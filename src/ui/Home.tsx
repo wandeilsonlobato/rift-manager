@@ -57,7 +57,7 @@ export function Home({ game, champions, onChange, onOpenSeries, onTab }: Props) 
         const s = game.series[id];
         return s.winner && (s.a === team.id || s.b === team.id) && s.winner !== team.id;
       }).length;
-      const lives = st.kind === 'double' ? 2 : 1;
+      const lives = st.kind === 'double' || st.kind === 'groups' ? 2 : 1;
       const alive = st.teamIds.includes(team.id) && losses < lives;
       status = !alive
         ? 'Eliminado'

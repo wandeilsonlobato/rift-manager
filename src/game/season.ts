@@ -1,5 +1,5 @@
 import { simulateGame, type GameOptions } from './match';
-import { clamp, type Rng } from './random';
+import { clamp, createRng, shuffle, type Rng } from './random';
 import type { Competition, Game, GameState, PhaseId, Series, Stage, StageKind, TrainingFocus } from './types';
 import { coachStyle } from './coach';
 import { staffLevel } from './staff';
@@ -167,10 +167,23 @@ function createPhase(state: GameState, phase: PhaseId): Competition[] {
     case 'split3':
       return Object.keys(state.leagues).map((slug) => leagueComp(state, slug, phase));
     case 'firstStand': {
-      const teams = qualify(state, 'split1', [
-        ['lck', 1], ['lpl', 1], ['lec', 1], ['lck', 2], ['lpl', 2], ['lcs', 1], ['lcp', 1], ['cblol-brazil', 1],
-      ]);
-      return [intlComp(state, phase, 'First Stand', [stage('knockout', 'Mata-mata', 5, teams)])];
+      // First Stand 2026: os campeões da LCK e da LPL encabeçam um grupo cada; o 2º de cada uma vai para o
+      // grupo do outro (uma região por grupo) e os campeões das outras regiões são sorteados entre os grupos.
+      const [lck1, lpl1, lck2, lpl2] = qualify(state, 'split1', [['lck', 1], ['lpl', 1], ['lck', 2], ['lpl', 2]]);
+      const others = shuffle(
+        createRng(`first-stand-${state.season}`),
+        qualify(state, 'split1', [['lec', 1], ['lcs', 1], ['lcp', 1], ['cblol-brazil', 1]]),
+      );
+      const teams = [lck1, lpl2, others[0], others[1], lpl1, lck2, others[2], others[3]].filter(Boolean);
+      if (teams.length < 8) {
+        return [intlComp(state, phase, 'First Stand', [stage('knockout', 'Mata-mata', 5, teams)])];
+      }
+      return [
+        intlComp(state, phase, 'First Stand', [
+          stage('groups', 'Fase de grupos', 5, teams),
+          stage('knockout', 'Mata-mata', 5, [], 4),
+        ]),
+      ];
     }
     case 'msi': {
       // MSI 2026: o campeão de cada região vai direto, mais o 2º da região que venceu o First Stand.
@@ -203,14 +216,39 @@ function createPhase(state: GameState, phase: PhaseId): Competition[] {
       return [intlComp(state, phase, 'Esports World Cup', [stage('knockout', 'Mata-mata', 3, teams)])];
     }
     case 'worlds': {
-      const teams = qualify(state, 'split3', [
-        ['lck', 1], ['lpl', 1], ['lec', 1], ['lcs', 1], ['lcp', 1], ['cblol-brazil', 1],
-        ['lck', 2], ['lpl', 2], ['lec', 2], ['lcs', 2], ['lcp', 2],
-        ['lck', 3], ['lpl', 3], ['lec', 3], ['lck', 4], ['lpl', 4],
-      ]);
+      // Worlds 2026: 17 vagas fixas + 1 extra para a região do campeão do MSI e 1 para a do vice.
+      const slots: Record<string, number> = { lck: 3, lpl: 3, lec: 3, lcs: 3, lcp: 3, 'cblol-brazil': 2 };
+      const msi = state.competitions.find((c) => c.id === `${state.season}-msi`);
+      for (const teamId of (msi?.ranking ?? []).slice(0, 2)) {
+        const region = state.teams[teamId]?.leagueSlug;
+        if (region && region in slots) slots[region]++;
+      }
+      // O último classificado de LEC, LCS, LCP e CBLOL joga o Play-in; os outros 15 vão direto para a suíça.
+      const playinRegions = ['lec', 'lcs', 'lcp', 'cblol-brazil'];
+      const order = ['lck', 'lpl', 'lec', 'lcs', 'lcp', 'cblol-brazil'];
+      const direct: [string, number][] = [];
+      for (let pos = 1; pos <= 4; pos++) {
+        for (const region of order) {
+          const isPlayin = playinRegions.includes(region) && pos === slots[region];
+          if (pos <= slots[region] && !isPlayin) direct.push([region, pos]);
+        }
+      }
+      const directTeams = qualify(state, 'split3', direct);
+      const playin = qualify(state, 'split3', playinRegions.map((r) => [r, slots[r]] as [string, number])).filter(
+        (t) => !directTeams.includes(t),
+      );
+      if (playin.length < 4) {
+        return [
+          intlComp(state, phase, 'Worlds', [
+            stage('swiss', 'Fase suíça', 1, [...directTeams, ...playin].slice(0, 16)),
+            stage('knockout', 'Mata-mata', 5, [], 8),
+          ]),
+        ];
+      }
       return [
         intlComp(state, phase, 'Worlds', [
-          stage('swiss', 'Fase suíça', 1, teams),
+          stage('double', 'Play-in', 5, playin),
+          stage('swiss', 'Fase suíça', 1, directTeams, 1),
           stage('knockout', 'Mata-mata', 5, [], 8),
         ]),
       ];
@@ -268,7 +306,29 @@ export interface StandingRow {
 }
 
 /** Tabela de uma fase de pontos corridos (ou registro V-D da fase suíça). */
+/** Regiões que o coach acompanha de perto: a liga dele e a outra divisão da mesma região. */
+function coachRegion(state: GameState): Set<string> {
+  const league = state.leagues[state.teams[state.coach.teamId ?? '']?.leagueSlug ?? ''];
+  return new Set([league?.slug, league?.parentSlug, league?.academySlug].filter(Boolean) as string[]);
+}
+
+/**
+ * Liga de outra região que terminou: guarda a tabela final e descarta as séries, que são a maior
+ * parte do save. Ainda dá para ver a classificação e o campeão.
+ */
+function archiveIfDistant(state: GameState, comp: Competition) {
+  if (comp.kind !== 'league' || coachRegion(state).has(comp.leagueSlug!)) return;
+  for (const st of comp.stages) {
+    if (isRoundRobin(st.kind)) st.table = stageStandings(state, st);
+    for (const id of st.rounds.flat()) delete state.series[id];
+    st.rounds = [];
+    st.played = 0;
+  }
+  comp.archived = true;
+}
+
 export function stageStandings(state: GameState, st: Stage): StandingRow[] {
+  if (st.table && !st.rounds.length) return st.table;
   const rows = new Map<string, StandingRow>(
     st.teamIds.map((id) => [id, { teamId: id, wins: 0, losses: 0, killsFor: 0, killsAgainst: 0, streak: '' }]),
   );
@@ -343,6 +403,27 @@ function nextRound(state: GameState, comp: Competition, idx: number): string[] |
     case 'double':
       return doubleElimRound(state, st, make);
 
+    // Dois grupos de 4 em eliminação dupla (sem grande final): vencedores e decisiva definem os 2 que avançam.
+    case 'groups': {
+      const W = (s: Series) => s.winner!;
+      const L = (s: Series) => loser(s);
+      const names = ['Grupo A', 'Grupo B'];
+      const out: string[] = [];
+      for (let g = 0; g < 2; g++) {
+        const o = g * 4;
+        const R = st.rounds.map((ids) => seriesOf(state, ids));
+        if (r === 0) {
+          out.push(make(`${names[g]} · Abertura`, t[o], t[o + 1]), make(`${names[g]} · Abertura`, t[o + 2], t[o + 3]));
+        } else if (r === 1) {
+          const [s0, s1] = [R[0][g * 2], R[0][g * 2 + 1]];
+          out.push(make(`${names[g]} · Vencedores`, W(s0), W(s1)), make(`${names[g]} · Eliminação`, L(s0), L(s1)));
+        } else if (r === 2) {
+          out.push(make(`${names[g]} · Decisiva`, L(R[1][g * 2]), W(R[1][g * 2 + 1])));
+        }
+      }
+      return out.length ? out : null;
+    }
+
     // Fase suíça: times com a mesma campanha se enfrentam; 3 vitórias classifica, 3 derrotas elimina.
     case 'swiss': {
       const table = stageStandings(state, st);
@@ -353,6 +434,9 @@ function nextRound(state: GameState, comp: Competition, idx: number): string[] |
         const key = `${row.wins}-${row.losses}`;
         groups.set(key, [...(groups.get(key) ?? []), row.teamId]);
       }
+      // Quem já se enfrentou na fase suíça não se enfrenta de novo.
+      const met = new Set<string>();
+      for (const s of seriesOf(state, st.rounds.flat())) met.add(`${s.a}|${s.b}`).add(`${s.b}|${s.a}`);
       const out: string[] = [];
       let carry: string[] = [];
       for (const [key, members] of [...groups].sort(([a], [b]) => b.localeCompare(a))) {
@@ -361,13 +445,34 @@ function nextRound(state: GameState, comp: Competition, idx: number): string[] |
         const [w, l] = key.split('-').map(Number);
         // Jogos que valem classificação ou eliminação são MD3.
         const bestOf = w === 2 || l === 2 ? 3 : 1;
-        for (let i = 0; i < pool.length / 2; i++) {
-          out.push(make(`Rodada ${r + 1} · ${key}`, pool[i], pool[pool.length - 1 - i], bestOf));
-        }
+        const pairs = swissPairs(pool, met) ?? fallbackPairs(pool);
+        for (const [a, b] of pairs) out.push(make(`Rodada ${r + 1} · ${key}`, a, b, bestOf));
       }
       return out;
     }
   }
+}
+
+/**
+ * Pareamento da fase suíça sem revanche: melhor seed contra o pior possível, voltando atrás quando
+ * a escolha deixaria dois times que já se enfrentaram sobrando no fim. Null se não houver solução.
+ */
+function swissPairs(pool: string[], met: Set<string>): [string, string][] | null {
+  if (!pool.length) return [];
+  const [a, ...rest] = pool;
+  for (let j = rest.length - 1; j >= 0; j--) {
+    if (met.has(`${a}|${rest[j]}`)) continue;
+    const tail = swissPairs([...rest.slice(0, j), ...rest.slice(j + 1)], met);
+    if (tail) return [[a, rest[j]], ...tail];
+  }
+  return null;
+}
+
+/** Sem pareamento possível sem revanche: melhor seed contra o pior. */
+function fallbackPairs(pool: string[]): [string, string][] {
+  const out: [string, string][] = [];
+  for (let i = 0; i < pool.length / 2; i++) out.push([pool[i], pool[pool.length - 1 - i]]);
+  return out;
 }
 
 type MakeSeries = (label: string, a: string, b: string, bestOf?: number) => string;
@@ -473,6 +578,15 @@ function stageResult(state: GameState, st: Stage): string[] {
       const series = seriesOf(state, st.rounds[0]);
       return [...bySeed(series.map((s) => s.winner!)), ...bySeed(series.map(loser))];
     }
+    case 'groups': {
+      const R = st.rounds.map((ids) => seriesOf(state, ids));
+      const first = [R[1][0].winner!, R[1][2].winner!];
+      const second = [R[2][0].winner!, R[2][1].winner!];
+      const third = [loser(R[2][0]), loser(R[2][1])];
+      const fourth = [loser(R[1][1]), loser(R[1][3])];
+      // Mata-mata: 1º do A x 2º do B e 1º do B x 2º do A.
+      return [first[0], first[1], second[0], second[1], ...third, ...fourth];
+    }
     case 'double': {
       // Campeão primeiro; os outros pela rodada em que foram eliminados (mais tarde = melhor).
       const rounds = st.rounds.map((ids) => seriesOf(state, ids));
@@ -530,6 +644,7 @@ function prepare(state: GameState, comp: Competition) {
       comp.done = true;
       state.titles.push({ season: state.season, compName: comp.name, championId: ranking[0] });
       recordTitle(state, comp);
+      archiveIfDistant(state, comp);
     }
   }
 }
@@ -565,9 +680,12 @@ export function playSeriesGame(state: GameState, s: Series, ctx: WeekContext, op
   s.kills = [s.kills[0] + ka, s.kills[1] + kb];
   if (game.detail) {
     recordGame(state, game);
-    state.games[game.id] = game;
-    s.gameIds.push(game.id);
     s.fearless.push(...[...game.detail.blueLines, ...game.detail.redLines].map((l) => l.champion));
+    // Jogo completo (lances, KDA) só fica salvo para o time do coach; o resto só soma estatísticas.
+    if (s.a === state.coach.teamId || s.b === state.coach.teamId) {
+      state.games[game.id] = game;
+      s.gameIds.push(game.id);
+    }
   }
   if (s.wins[0] >= needed(s) || s.wins[1] >= needed(s)) finishSeries(state, s);
   return game;
@@ -575,6 +693,7 @@ export function playSeriesGame(state: GameState, s: Series, ctx: WeekContext, op
 
 function finishSeries(state: GameState, s: Series) {
   s.winner = s.wins[0] > s.wins[1] ? s.a : s.b;
+  delete s.fearless;
   s.week = state.week;
   // Moral: vitória anima, derrota abala.
   for (const teamId of [s.a, s.b]) {

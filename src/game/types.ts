@@ -284,8 +284,11 @@ export interface Series {
 export type PhaseId = 'split1' | 'firstStand' | 'split2' | 'msi' | 'ewc' | 'split3' | 'worlds' | 'offseason';
 
 /** rr1/rr2 = pontos corridos turno único/turno e returno */
-/** double = eliminação dupla (chave superior, chave inferior e grande final) */
-export type StageKind = 'rr1' | 'rr2' | 'playoffs' | 'knockout' | 'playin' | 'swiss' | 'double';
+/**
+ * double = eliminação dupla (chave superior, chave inferior e grande final);
+ * groups = dois grupos de 4 em eliminação dupla, os 2 melhores de cada avançam.
+ */
+export type StageKind = 'rr1' | 'rr2' | 'playoffs' | 'knockout' | 'playin' | 'swiss' | 'double' | 'groups';
 
 export interface Stage {
   kind: StageKind;
@@ -299,6 +302,8 @@ export interface Stage {
   played: number;
   /** classificação final da fase */
   result?: string[];
+  /** tabela final guardada quando a competição é arquivada (séries descartadas) */
+  table?: { teamId: string; wins: number; losses: number; killsFor: number; killsAgainst: number; streak: string }[];
 }
 
 export interface Competition {
@@ -315,6 +320,8 @@ export interface Competition {
   ranking?: string[];
   /** premiação já distribuída */
   paid?: boolean;
+  /** séries descartadas para aliviar o save (sobra só a classificação) */
+  archived?: boolean;
 }
 
 export type MetaStyle = 'early' | 'balanced' | 'late';
